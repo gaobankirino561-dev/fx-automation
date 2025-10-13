@@ -1,0 +1,4 @@
+rank,pf,return%,maxDD%,trades,file,params
+1,0.00,-2.20,2.20,29,results\equity_full_2.csv,"{'KTP': '2.0', 'KSL': '1.2', 'TREND': '100', 'RSI_UP': '60', 'RSI_DN': '40'}"
+2,0.00,-2.50,2.50,30,results\equity_full_1.csv,"{'KTP': '1.6', 'KSL': '1.0', 'TREND': '50', 'RSI_UP': '55', 'RSI_DN': '45'}"
+3,0.00,-4.70,4.70,52,results\equity_full_3.csv,"{'KTP': '1.2', 'KSL': '1.0', 'TREND': '0', 'RSI_UP': '55', 'RSI_DN': '45'}"

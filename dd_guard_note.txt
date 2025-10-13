@@ -1,0 +1,1 @@
+﻿ohlc_backtest_atr.py の for ループ内、エントリー前に\n:    if (peak - eq) / max(peak,1e-9) * 100 > float(os.getenv('OB_MAXDD_STOP','1000')): side=None\n

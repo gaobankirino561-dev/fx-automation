@@ -1,0 +1,35 @@
+﻿model:
+  default: gpt-4o-mini
+  temperature: 0.0
+  strict_json: true
+  fallbacks: ["gpt-4o", "gpt-4o-mini"]
+cache:
+  path: gpt_cache.json
+  include_model_in_key: true
+  ttl_seconds: null
+retry:
+  max_attempts: 3
+  backoff_seconds: [1.0, 2.0, 4.0]
+logging:
+  stdout_signals:
+    cache_hit: true
+    api_call: true
+    retry_notice: true
+constraints:
+  forbid_legacy_api: true
+  openai_version: ">=1.10"
+summarizer:
+  atr_thresholds: [0.1, 0.25]
+  rsi_bounds: [30.0, 70.0]
+meta:
+  model_name: gpt-4o-mini
+trading:
+  spread_max: 2.0
+  atr_min_M15: 0.05
+  tp_k_atr: 1.5
+  sl_k_atr: 0.9
+  round_digits: 4
+
+
+
+
