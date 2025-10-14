@@ -1,9 +1,5 @@
-seg,trades,PF,return%,maxDD%
-1,6,0.00,-0.00,0.00
-2,4,0.00,-0.30,0.30
-3,8,0.00,-0.00,0.00
-4,6,0.00,-0.00,0.00
-5,4,0.00,-0.60,0.60
-6,4,0.00,-0.60,0.60
-
-PF(avg),0.00,return%(avg),-0.25,maxDD%(avg),0.25,trades(total),32
+split,trades,PF,return%,maxDD%,chunk_csv,equity_csv
+1,10,0.00,-0.00,0.00,wf_chunk_1.csv,wf_equity_1.csv
+2,15,0.00,-0.10,0.10,wf_chunk_2.csv,wf_equity_2.csv
+3,9,0.00,-0.00,0.00,wf_chunk_3.csv,wf_equity_3.csv
+4,11,0.00,-0.00,0.00,wf_chunk_4.csv,wf_equity_4.csv
