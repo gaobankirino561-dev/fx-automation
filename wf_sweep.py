@@ -24,11 +24,11 @@ BASE = {
     "OB_MAXDD_STOP": os.getenv("OB_MAXDD_STOP", "20"),
 }
 
-# broaden search grid for rough sweep
-KTP = ["1.0", "1.2", "1.4", "1.6", "1.8", "2.0"]
-KSL = ["0.8", "1.0", "1.2", "1.4"]
-TREND = ["0", "50", "100", "150", "200"]
-RSI = [("52", "48"), ("55", "45"), ("58", "42"), ("60", "40"), ("65", "35")]
+# custom sweep grid (adjust ranges as needed)
+KTP = ["0.8", "1.0", "1.2", "1.4"]
+KSL = ["1.0", "1.2", "1.4", "1.6"]
+TREND = ["50", "100", "150", "200"]
+RSI = [("52", "48"), ("55", "45"), ("60", "40")]
 
 
 def pick(output: str, tag: str, end: str = " ") -> str:
