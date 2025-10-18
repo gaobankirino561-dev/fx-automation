@@ -24,11 +24,23 @@ BASE = {
     "OB_MAXDD_STOP": os.getenv("OB_MAXDD_STOP", "20"),
 }
 
-# custom sweep grid (adjust ranges as needed)
-KTP = ["0.8", "1.0", "1.2", "1.4"]
-KSL = ["1.0", "1.2", "1.4", "1.6"]
-TREND = ["50", "100", "150", "200"]
-RSI = [("52", "48"), ("55", "45"), ("60", "40")]
+# Trend-following set (A)
+KTP_A = ["0.8", "0.9", "1.0", "1.1", "1.2"]
+KSL_A = ["1.6", "1.8", "2.0"]
+TREND_A = ["20", "50", "200", "250"]
+RSI_A = [("55", "45"), ("60", "40"), ("52", "48")]
+
+# Quick-hit set (B)
+KTP_B = ["1.2", "1.3", "1.4", "1.5", "1.6"]
+KSL_B = ["1.0", "1.1", "1.2", "1.3", "1.4"]
+TREND_B = ["20", "50", "100", "150"]
+RSI_B = [("52", "48"), ("55", "45")]
+
+# side-by-side sweep
+KTP = KTP_A + KTP_B
+KSL = list(dict.fromkeys(KSL_A + KSL_B))
+TREND = list(dict.fromkeys(TREND_A + TREND_B))
+RSI = RSI_A + RSI_B
 
 
 def pick(output: str, tag: str, end: str = " ") -> str:

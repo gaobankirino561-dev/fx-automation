@@ -1,0 +1,56 @@
+{
+  "stages": [
+    {
+      "name": "widen_level_1",
+      "description": "Expand KTP/KSL ranges by ±20% and add intermediate RSI/Trend values",
+      "adjustments": {
+        "OB_KTP": {
+          "action": "range_expand",
+          "scale": 0.2,
+          "step": 0.1
+        },
+        "OB_KSL": {
+          "action": "range_expand",
+          "scale": 0.2,
+          "step": 0.1
+        },
+        "OB_TREND_SMA": {
+          "action": "add_values",
+          "values": [10, 300]
+        },
+        "OB_RSI": {
+          "action": "add_pairs",
+          "values": [
+            [57, 43],
+            [58, 42]
+          ]
+        }
+      }
+    },
+    {
+      "name": "widen_level_2",
+      "description": "Further widen ranges and add outer RSI pairs",
+      "adjustments": {
+        "OB_KTP": {
+          "action": "add_values",
+          "values": [0.6, 0.7, 1.7, 1.8]
+        },
+        "OB_KSL": {
+          "action": "add_values",
+          "values": [0.8, 2.2]
+        },
+        "OB_TREND_SMA": {
+          "action": "add_values",
+          "values": [400]
+        },
+        "OB_RSI": {
+          "action": "add_pairs",
+          "values": [
+            [51, 49],
+            [65, 35]
+          ]
+        }
+      }
+    }
+  ]
+}

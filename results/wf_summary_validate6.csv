@@ -1,5 +1,0 @@
-split,trades,PF,return%,maxDD%,chunk_csv,equity_csv
-1,10,0.00,-0.00,0.00,wf_chunk_1.csv,wf_equity_1.csv
-2,15,0.00,-0.10,0.10,wf_chunk_2.csv,wf_equity_2.csv
-3,9,0.00,-0.00,0.00,wf_chunk_3.csv,wf_equity_3.csv
-4,11,0.00,-0.00,0.00,wf_chunk_4.csv,wf_equity_4.csv

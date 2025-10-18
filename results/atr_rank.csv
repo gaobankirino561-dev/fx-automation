@@ -1,4 +1,0 @@
-rank,KTP,KSL,TREND,RSI_UP,RSI_DN,Trades,Win%,PF,Return%,MaxDD%,NetPips,FinalEq,EquityCSV
-1,2.0,1.2,100,60,40,29,0.00,0.00,-2.20,2.20,-105.70,9780.10,results\equity_full_2.csv
-2,1.6,1.0,50,55,45,30,0.00,0.00,-2.50,2.50,-98.10,9747.87,results\equity_full_1.csv
-3,1.2,1.0,0,55,45,52,0.00,0.00,-4.70,4.70,-187.40,9534.56,results\equity_full_3.csv
