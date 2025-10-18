@@ -1,0 +1,213 @@
+﻿{
+    "commit_gate":  {
+                        "requested":  false,
+                        "status":  "not_requested",
+                        "reason":  "Pack not requested",
+                        "passed":  null
+                    },
+    "git_sha":  "740e5f7",
+    "validation":  {
+                       "skipped":  true,
+                       "blocking_condition":  {
+                                                  "key":  "trades",
+                                                  "description":  "Trades minimum",
+                                                  "failures":  10116
+                                              }
+                   },
+    "files_count":  10,
+    "timestamp":  "20251017_015228",
+    "git_status":  {
+                       "dirty":  true,
+                       "changed":  668,
+                       "sample":  [
+                                      " M results/wf_chunk_1.csv",
+                                      " M results/wf_chunk_2.csv",
+                                      " M results/wf_chunk_3.csv",
+                                      " M results/wf_chunk_4.csv",
+                                      " M results/wf_chunk_5.csv",
+                                      " M results/wf_chunk_6.csv",
+                                      " M results/wf_equity_1.csv",
+                                      " M results/wf_equity_2.csv",
+                                      " M results/wf_equity_3.csv",
+                                      " M results/wf_equity_4.csv"
+                                  ]
+                   },
+    "selection":  {
+                      "augmentations":  [
+                                            {
+                                                "mode":  "augment",
+                                                "stage":  "widen_level_1",
+                                                "combos_total":  14960,
+                                                "duplicates_skipped":  972,
+                                                "combos_after_filter":  13988,
+                                                "combos_scheduled":  1200,
+                                                "combos_evaluated":  1200,
+                                                "raw_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251017_015228.csv",
+                                                "summary_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251017_015228.csv",
+                                                "duration_sec":  3997.5380630493169,
+                                                "dry_run":  false
+                                            },
+                                            {
+                                                "mode":  "augment",
+                                                "stage":  "widen_level_2",
+                                                "combos_total":  27846,
+                                                "duplicates_skipped":  2172,
+                                                "combos_after_filter":  25674,
+                                                "combos_scheduled":  1200,
+                                                "combos_evaluated":  1200,
+                                                "raw_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251017_015228.csv",
+                                                "summary_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251017_015228.csv",
+                                                "duration_sec":  4006.1238551139832,
+                                                "dry_run":  false
+                                            }
+                                        ],
+                      "meta_json":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel3.json",
+                      "log":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel3.log",
+                      "summary_csv":  "C:\\codex-test\\logs\\FX繝励Ο繧ｸ繧ｧ繧ｯ繝・\results\\wf_stability_summary_20251017_015228.csv",
+                      "raw_csv":  "C:\\codex-test\\logs\\FX繝励Ο繧ｸ繧ｧ繧ｯ繝・\results\\wf_stability_20251017_015228.csv",
+                      "levels":  [
+                                     {
+                                         "name":  "L0",
+                                         "thresholds":  {
+                                                            "pf_min":  1.05,
+                                                            "ret_min":  0.0,
+                                                            "dd_max":  20.0
+                                                        },
+                                         "excluded":  {
+                                                          "pf":  0,
+                                                          "ret":  0,
+                                                          "dd":  0,
+                                                          "trades":  3372,
+                                                          "accepted":  0
+                                                      },
+                                         "accepted":  0
+                                     },
+                                     {
+                                         "name":  "L1",
+                                         "thresholds":  {
+                                                            "pf_min":  1.02,
+                                                            "ret_min":  -0.05,
+                                                            "dd_max":  22.0
+                                                        },
+                                         "excluded":  {
+                                                          "pf":  0,
+                                                          "ret":  0,
+                                                          "dd":  0,
+                                                          "trades":  3372,
+                                                          "accepted":  0
+                                                      },
+                                         "accepted":  0
+                                     },
+                                     {
+                                         "name":  "L2",
+                                         "thresholds":  {
+                                                            "pf_min":  1.0,
+                                                            "ret_min":  -0.1,
+                                                            "dd_max":  25.0
+                                                        },
+                                         "excluded":  {
+                                                          "pf":  0,
+                                                          "ret":  0,
+                                                          "dd":  0,
+                                                          "trades":  3372,
+                                                          "accepted":  0
+                                                      },
+                                         "accepted":  0
+                                     }
+                                 ],
+                      "duplicates_removed":  0,
+                      "stages":  [
+                                     "20",
+                                     "30",
+                                     "40",
+                                     "60"
+                                 ],
+                      "candidate_count":  0,
+                      "reason_totals":  {
+                                            "pf":  0,
+                                            "ret":  0,
+                                            "dd":  0,
+                                            "trades":  10116
+                                        },
+                      "blocking_condition":  {
+                                                 "key":  "trades",
+                                                 "description":  "Trades minimum",
+                                                 "failures":  10116
+                                             }
+                  },
+    "files":  [
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251017_015228.csv",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251017_015228.csv",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel1.json",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel1.log",
+                  "C:\\codex-test\\logs\\FX繝励Ο繧ｸ繧ｧ繧ｯ繝・\results\\wf_stability_20251017_015228.csv",
+                  "C:\\codex-test\\logs\\FX繝励Ο繧ｸ繧ｧ繧ｯ繝・\results\\wf_stability_summary_20251017_015228.csv",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel2.json",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel2.log",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel3.json",
+                  "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251017_015228_sel3.log"
+              ],
+    "args":  {
+                 "n_min":  5,
+                 "trades_min":  30,
+                 "widening_levels":  "[(1.05,0,20),(1.02,-0.05,22),(1.00,-0.10,25)]",
+                 "stages":  "20,30,40,60",
+                 "stability_splits":  [
+                                          20,
+                                          30
+                                      ],
+                 "validation_splits":  [
+                                           40,
+                                           60
+                                       ],
+                 "out_dir":  "C:\\codex-test\\logs\\FXプロジェクト\\results",
+                 "base_grid":  ".\\config\\param_grid_base.yaml",
+                 "aug_grid":  ".\\config\\param_grid_aug.yaml",
+                 "max_combinations":  1200,
+                 "pack":  false,
+                 "equity_start":  "2023-01-01",
+                 "equity_end":  "2024-12-31"
+             },
+    "dry_run":  false,
+    "generation":  [
+                       {
+                           "mode":  "base",
+                           "stage":  "base",
+                           "combos_total":  972,
+                           "duplicates_skipped":  0,
+                           "combos_after_filter":  972,
+                           "combos_scheduled":  972,
+                           "combos_evaluated":  972,
+                           "raw_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251017_015228.csv",
+                           "summary_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251017_015228.csv",
+                           "duration_sec":  3356.1807661056519,
+                           "dry_run":  false
+                       },
+                       {
+                           "mode":  "augment",
+                           "stage":  "widen_level_1",
+                           "combos_total":  14960,
+                           "duplicates_skipped":  972,
+                           "combos_after_filter":  13988,
+                           "combos_scheduled":  1200,
+                           "combos_evaluated":  1200,
+                           "raw_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251017_015228.csv",
+                           "summary_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251017_015228.csv",
+                           "duration_sec":  3997.5380630493169,
+                           "dry_run":  false
+                       },
+                       {
+                           "mode":  "augment",
+                           "stage":  "widen_level_2",
+                           "combos_total":  27846,
+                           "duplicates_skipped":  2172,
+                           "combos_after_filter":  25674,
+                           "combos_scheduled":  1200,
+                           "combos_evaluated":  1200,
+                           "raw_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251017_015228.csv",
+                           "summary_csv":  "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251017_015228.csv",
+                           "duration_sec":  4006.1238551139832,
+                           "dry_run":  false
+                       }
+                   ]
+}

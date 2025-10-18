@@ -1,13 +1,21 @@
-# Backtest outputs
-results/
-equity_*.csv
-results/*.csv
-equity_*.csv
-*.pyc
+﻿# Python / MT5 / FX自動化向け
 __pycache__/
-.pytest_cache/
-*.log
+*.pyc
+.venv/
+venv/
 .env
-/results/*
-!/**/.gitkeep
-!/artifacts/**
+.env.*
+.envrc
+*.log
+*.csv
+*.cache
+.cache/
+.gpt_cache.json
+gpt_cache.json
+.mt5/
+.DS_Store
+
+# OS/Editor
+Thumbs.db
+.vscode/
+.idea/

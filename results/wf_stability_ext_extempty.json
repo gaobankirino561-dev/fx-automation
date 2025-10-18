@@ -1,0 +1,22 @@
+{
+  "timestamp": "extempty",
+  "meta_in": "results\\select_candidates_test.csv",
+  "splits": [
+    "40",
+    "60"
+  ],
+  "maxdd_stop": "20",
+  "raw_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_ext_extempty.csv",
+  "summary_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_ext_summary_extempty.csv",
+  "candidates": 1,
+  "strict_criteria": {
+    "pf_min": 1.05,
+    "ret_min": 0.0,
+    "dd_max": 20.0,
+    "pf_drift_min": -0.1
+  },
+  "results": [],
+  "final_picks": [],
+  "final_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\final_candidates_extempty.csv",
+  "has_summary_rows": false
+}

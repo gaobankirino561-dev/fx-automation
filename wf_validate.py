@@ -1,12 +1,58 @@
 ﻿from __future__ import annotations
 
 import csv
+import io
 import math
 import os
 import subprocess
 import sys
 from pathlib import Path
 from typing import List, Tuple
+
+
+def _safe_stream(stream: io.TextIOBase) -> io.TextIOBase:
+    class _SafeWrapper(io.TextIOBase):
+        def __init__(self, wrapped: io.TextIOBase) -> None:
+            self._wrapped = wrapped
+
+        def write(self, data: str) -> int:  # type: ignore[override]
+            try:
+                return self._wrapped.write(data)
+            except OSError:
+                return len(data)
+
+        def flush(self) -> None:  # type: ignore[override]
+            try:
+                self._wrapped.flush()
+            except OSError:
+                pass
+
+        @property
+        def encoding(self) -> str | None:  # type: ignore[override]
+            return getattr(self._wrapped, "encoding", None)
+
+        @property
+        def errors(self) -> str | None:
+            return getattr(self._wrapped, "errors", None)
+
+        @property
+        def buffer(self):
+            return getattr(self._wrapped, "buffer", None)
+
+        def fileno(self) -> int:  # type: ignore[override]
+            return self._wrapped.fileno()
+
+        def isatty(self) -> bool:  # type: ignore[override]
+            return self._wrapped.isatty()
+
+        def __getattr__(self, name: str):
+            return getattr(self._wrapped, name)
+
+    return _SafeWrapper(stream)
+
+
+sys.stdout = _safe_stream(sys.stdout)  # type: ignore[assignment]
+sys.stderr = _safe_stream(sys.stderr)  # type: ignore[assignment]
 
 CSV_IN = Path(os.getenv("OHLC_CSV", "data/ohlc.csv"))
 SPLITS = int(os.getenv("WF_SPLITS", "6"))

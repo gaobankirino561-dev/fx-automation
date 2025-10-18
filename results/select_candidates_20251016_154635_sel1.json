@@ -1,0 +1,65 @@
+{
+  "timestamp": "20251016_154635_sel1",
+  "summary_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_summary_20251016_154635.csv",
+  "raw_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_20251016_154635.csv",
+  "n_min": 5,
+  "trades_min": 30,
+  "levels": [
+    {
+      "name": "L0",
+      "thresholds": {
+        "pf_min": 1.05,
+        "ret_min": 0.0,
+        "dd_max": 20.0
+      },
+      "excluded": {
+        "pf": 0,
+        "ret": 0,
+        "dd": 0,
+        "trades": 0,
+        "accepted": 0
+      },
+      "accepted": 0
+    },
+    {
+      "name": "L1",
+      "thresholds": {
+        "pf_min": 1.02,
+        "ret_min": -0.05,
+        "dd_max": 22.0
+      },
+      "excluded": {
+        "pf": 0,
+        "ret": 0,
+        "dd": 0,
+        "trades": 0,
+        "accepted": 0
+      },
+      "accepted": 0
+    },
+    {
+      "name": "L2",
+      "thresholds": {
+        "pf_min": 1.0,
+        "ret_min": -0.1,
+        "dd_max": 25.0
+      },
+      "excluded": {
+        "pf": 0,
+        "ret": 0,
+        "dd": 0,
+        "trades": 0,
+        "accepted": 0
+      },
+      "accepted": 0
+    }
+  ],
+  "duplicates_removed": 0,
+  "stages": [
+    "20",
+    "30",
+    "40",
+    "60"
+  ],
+  "selected": []
+}

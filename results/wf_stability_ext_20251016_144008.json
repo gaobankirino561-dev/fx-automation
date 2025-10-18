@@ -1,0 +1,13 @@
+{
+  "timestamp": "20251016_144008",
+  "meta_in": "C:\\codex-test\\logs\\FXプロジェクト\\results\\select_candidates_20251016_143542.json",
+  "splits": [
+    "40",
+    "60"
+  ],
+  "maxdd_stop": "20",
+  "raw_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_ext_20251016_144008.csv",
+  "summary_csv": "C:\\codex-test\\logs\\FXプロジェクト\\results\\wf_stability_ext_summary_20251016_144008.csv",
+  "candidates": 0,
+  "dry_run": true
+}
