@@ -1,21 +1,11 @@
-﻿# Python / MT5 / FX自動化向け
-__pycache__/
+﻿__pycache__/
 *.pyc
 .venv/
 venv/
-.env
-.env.*
-.envrc
+.env*
 *.log
 *.csv
-*.cache
 .cache/
-.gpt_cache.json
 gpt_cache.json
-.mt5/
-.DS_Store
-
-# OS/Editor
-Thumbs.db
 .vscode/
 .idea/
