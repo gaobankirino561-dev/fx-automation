@@ -1,1 +1,1 @@
-﻿# 依存は標準ライブラリのみ。将来増えたらここに追記。
+﻿# No third-party dependencies. Standard library only; add here if that changes.
