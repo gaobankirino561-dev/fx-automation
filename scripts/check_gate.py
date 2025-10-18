@@ -1,49 +1,42 @@
 ﻿"""
-CI 用ゲート実行スクリプト。閾値を満たさなければ終了コードで失敗。
+CI gate executor. No external API usage; fully deterministic.
 """
 
 from __future__ import annotations
 
-import os
-import pathlib
+import json
 import sys
+from pathlib import Path
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from gate.backtest_sample import run_sample
 
-NET_MIN = 0.0
-WIN_RATE_MIN = 0.45
-MAX_DD_MAX = 0.20
-TRADES_MIN = 30
+THRESHOLDS = {
+    "net_pnl_min": 1.0,
+    "win_rate_min": 0.45,
+    "max_dd_max": 0.20,
+    "trades_min": 30,
+}
 
 
 def main() -> int:
     metrics = run_sample(initial=50_000.0)
-    print(
-        f"[gate] net_pnl={metrics['net_pnl']:.2f} "
-        f"win_rate={metrics['win_rate']:.3f} "
-        f"max_dd_pct={metrics['max_dd_pct']:.3f} trades={metrics['trades']}"
-    )
-    print(
-        f"[gate] thresholds net>{NET_MIN:.2f} "
-        f"win_rate>={WIN_RATE_MIN:.3f} "
-        f"max_dd<={MAX_DD_MAX:.3f} trades>={TRADES_MIN}"
-    )
+    print(json.dumps({"metrics": metrics, "thresholds": THRESHOLDS}, indent=2))
 
-    if metrics["net_pnl"] <= NET_MIN:
+    if metrics["net_pnl"] <= THRESHOLDS["net_pnl_min"]:
         print("[gate] FAIL: net pnl below threshold", file=sys.stderr)
         return 1
-    if metrics["win_rate"] < WIN_RATE_MIN:
+    if metrics["win_rate"] < THRESHOLDS["win_rate_min"]:
         print("[gate] FAIL: win rate below threshold", file=sys.stderr)
         return 1
-    if metrics["max_dd_pct"] > MAX_DD_MAX:
+    if metrics["max_dd_pct"] > THRESHOLDS["max_dd_max"]:
         print("[gate] FAIL: max drawdown above threshold", file=sys.stderr)
         return 1
-    if metrics["trades"] < TRADES_MIN:
+    if metrics["trades"] < THRESHOLDS["trades_min"]:
         print("[gate] FAIL: insufficient trades", file=sys.stderr)
         return 1
 
