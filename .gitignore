@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 .venv/
 venv/
@@ -9,3 +9,9 @@ venv/
 gpt_cache.json
 .vscode/
 .idea/
+artifacts/
+results/**
+!results/.gitkeep
+.pr_body_*.md
+tools/gh/
+tools/gh_*.zip
