@@ -11,7 +11,6 @@ services.
 from __future__ import annotations
 
 import csv
-import statistics
 import sys
 from pathlib import Path
 
@@ -20,9 +19,10 @@ DATA_PATH = ROOT / "gates" / "data" / "sample_wf_summary.csv"
 
 # Thresholds chosen so the bundled sample passes with healthy margins.
 THRESHOLDS = {
-    "pf_avg_min": 1.20,
-    "ret_avg_min": 0.50,
-    "maxdd_avg_max": 15.0,
+    "net_min": 0.0,
+    "win_rate_min": 0.45,
+    "maxdd_max": 0.20,
+    "trades_min": 30,
 }
 
 
@@ -32,17 +32,28 @@ def load_sample(path: Path) -> list[dict[str, float]]:
     rows: list[dict[str, float]] = []
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        required = {"split", "pf", "return_pct", "maxdd_pct"}
-        if reader.fieldnames is None or not required.issubset(reader.fieldnames):
+        if reader.fieldnames is None:
+            raise ValueError("Sample CSV is missing headers.")
+
+        def clean_field(name: str | None) -> str:
+            return (name or "").replace("\ufeff", "").strip()
+
+        cleaned_fields = [clean_field(name) for name in reader.fieldnames]
+        mapping = dict(zip(reader.fieldnames, cleaned_fields))
+
+        required = {"split", "net", "wins", "trades", "maxdd_ratio"}
+        if not required.issubset(set(cleaned_fields)):
             raise ValueError(f"Sample CSV is missing required headers: {required}")
         for raw in reader:
+            row = {mapping[key]: value for key, value in raw.items()}
             try:
                 rows.append(
                     {
-                        "split": int(raw["split"]),
-                        "pf": float(raw["pf"]),
-                        "return_pct": float(raw["return_pct"]),
-                        "maxdd_pct": float(raw["maxdd_pct"]),
+                        "split": int(row["split"]),
+                        "net": float(row["net"]),
+                        "wins": int(row["wins"]),
+                        "trades": int(row["trades"]),
+                        "maxdd_ratio": float(row["maxdd_ratio"]),
                     }
                 )
             except (TypeError, ValueError) as exc:
@@ -53,65 +64,77 @@ def load_sample(path: Path) -> list[dict[str, float]]:
 
 
 def evaluate(rows: list[dict[str, float]]) -> dict[str, float]:
-    pf_values = [row["pf"] for row in rows]
-    ret_values = [row["return_pct"] for row in rows]
-    dd_values = [row["maxdd_pct"] for row in rows]
+    net_total = sum(row["net"] for row in rows)
+    trades_total = sum(row["trades"] for row in rows)
+    wins_total = sum(row["wins"] for row in rows)
 
-    evaluation = {
-        "pf_avg": statistics.fmean(pf_values),
-        "ret_avg": statistics.fmean(ret_values),
-        "maxdd_avg": statistics.fmean(dd_values),
-        "pf_min": min(pf_values),
-        "ret_min": min(ret_values),
-        "maxdd_max": max(dd_values),
+    if trades_total <= 0:
+        raise ValueError("Total trades must be positive in sample data.")
+
+    win_rate = wins_total / trades_total
+    maxdd_max = max(row["maxdd_ratio"] for row in rows)
+
+    return {
+        "net_total": net_total,
+        "trades_total": trades_total,
+        "wins_total": wins_total,
+        "win_rate": win_rate,
+        "maxdd_max": maxdd_max,
     }
-    return evaluation
 
 
 def main() -> int:
     rows = load_sample(DATA_PATH)
     metrics = evaluate(rows)
 
-    pf_ok = metrics["pf_avg"] >= THRESHOLDS["pf_avg_min"]
-    ret_ok = metrics["ret_avg"] >= THRESHOLDS["ret_avg_min"]
-    dd_ok = metrics["maxdd_avg"] <= THRESHOLDS["maxdd_avg_max"]
+    net_ok = metrics["net_total"] > THRESHOLDS["net_min"]
+    win_ok = metrics["win_rate"] >= THRESHOLDS["win_rate_min"]
+    trades_ok = metrics["trades_total"] >= THRESHOLDS["trades_min"]
+    dd_ok = metrics["maxdd_max"] <= THRESHOLDS["maxdd_max"]
 
     print("[gate] rows=", len(rows))
     print(
-        "[gate] pf_avg={pf_avg:.2f} pf_min={pf_min:.2f} "
-        "ret_avg={ret_avg:.2f} ret_min={ret_min:.2f} "
-        "maxdd_avg={maxdd_avg:.2f} maxdd_max={maxdd_max:.2f}".format(**metrics)
+        "[gate] net_total={net_total:.2f} trades_total={trades_total} "
+        "wins_total={wins_total} win_rate={win_rate:.3f} "
+        "maxdd_max={maxdd_max:.3f}".format(**metrics)
     )
     print(
-        "[gate] thresholds pf_avg_min={pf_thr:.2f} ret_avg_min={ret_thr:.2f} "
-        "maxdd_avg_max={dd_thr:.2f}".format(
-            pf_thr=THRESHOLDS["pf_avg_min"],
-            ret_thr=THRESHOLDS["ret_avg_min"],
-            dd_thr=THRESHOLDS["maxdd_avg_max"],
+        "[gate] thresholds net_min>{net_thr:.2f} win_rate_min={win_thr:.3f} "
+        "trades_min={trd_thr} maxdd_max<={dd_thr:.3f}".format(
+            net_thr=THRESHOLDS["net_min"],
+            win_thr=THRESHOLDS["win_rate_min"],
+            trd_thr=THRESHOLDS["trades_min"],
+            dd_thr=THRESHOLDS["maxdd_max"],
         )
     )
 
-    if pf_ok and ret_ok and dd_ok:
+    if net_ok and win_ok and trades_ok and dd_ok:
         print("[gate] PASS: numeric gate satisfied.")
         return 0
 
     print("[gate] FAIL: numeric gate violated.", file=sys.stderr)
-    if not pf_ok:
+    if not net_ok:
         print(
-            f"[gate] pf_avg {metrics['pf_avg']:.2f} "
-            f"< pf_avg_min {THRESHOLDS['pf_avg_min']:.2f}",
+            f"[gate] net_total {metrics['net_total']:.2f} "
+            f"<= net_min {THRESHOLDS['net_min']:.2f}",
             file=sys.stderr,
         )
-    if not ret_ok:
+    if not win_ok:
         print(
-            f"[gate] ret_avg {metrics['ret_avg']:.2f} "
-            f"< ret_avg_min {THRESHOLDS['ret_avg_min']:.2f}",
+            f"[gate] win_rate {metrics['win_rate']:.3f} "
+            f"< win_rate_min {THRESHOLDS['win_rate_min']:.3f}",
+            file=sys.stderr,
+        )
+    if not trades_ok:
+        print(
+            f"[gate] trades_total {metrics['trades_total']} "
+            f"< trades_min {THRESHOLDS['trades_min']}",
             file=sys.stderr,
         )
     if not dd_ok:
         print(
-            f"[gate] maxdd_avg {metrics['maxdd_avg']:.2f} "
-            f"> maxdd_avg_max {THRESHOLDS['maxdd_avg_max']:.2f}",
+            f"[gate] maxdd_max {metrics['maxdd_max']:.3f} "
+            f"> maxdd_max {THRESHOLDS['maxdd_max']:.3f}",
             file=sys.stderr,
         )
     return 1
