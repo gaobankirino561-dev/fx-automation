@@ -6,10 +6,10 @@ from typing import List
 
 @dataclass(frozen=True)
 class Metrics:
-    net_pnl: float          # 円建て
-    win_rate: float         # 0-1
-    max_dd_pct: float       # 0-1（初期資金に対する）
-    trades: int             # 総取引数
+    net_pnl: float
+    win_rate: float
+    max_dd_pct: float
+    trades: int
 
 
 def equity_curve(pnls: List[float], initial: float) -> List[float]:
