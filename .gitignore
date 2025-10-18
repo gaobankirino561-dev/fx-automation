@@ -5,6 +5,7 @@ venv/
 .env*
 *.log
 *.csv
+!gates/data/*.csv
 .cache/
 gpt_cache.json
 .vscode/
