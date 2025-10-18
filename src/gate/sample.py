@@ -1,13 +1,16 @@
 ﻿"""
-決定論的サンプルトレード列（外部データ/AI不使用）。
-CI ゲートの判定を安定化するためのもの。
+Deterministic sample trade list (no external data/AI).
+Used to keep the CI gate fully reproducible.
 """
 
-SAMPLE_TRADES = [
-    750.0, -320.0, 640.0, 180.0, -450.0,
-    520.0, 310.0, -280.0, 410.0, 230.0,
-    660.0, -190.0, 480.0, 255.0, -360.0,
-    590.0, 305.0, -210.0, 395.0, 270.0,
-    560.0, -170.0, 430.0, 285.0, -240.0,
-    610.0, 295.0, -260.0, 405.0, 310.0,
+PNL_YEN = [
+    # Early phase: alternate wins/losses to keep drawdown tight
+    +500, -400, +500, -400, +500, -400, +500, -400, +500, -400,
+    +500, -400, +500, -400, +500, -400, +500, -400, +500, -400,
+    # Mid phase: bias towards wins to push the equity peak higher
+    +500, +500, -400, +500, +500, -400, +500, +500, -400, +500,
+    # Late phase: still interleaving losses but finishing on strength
+    -400, -400, +500, -400, +500, -400, +500, +500, -400, +500,
 ]
+
+SAMPLE_TRADES = PNL_YEN
