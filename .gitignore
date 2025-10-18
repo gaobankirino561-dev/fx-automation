@@ -15,3 +15,5 @@ results/**
 .pr_body_*.md
 tools/gh/
 tools/gh_*.zip
+path/to/gh.exe
+
