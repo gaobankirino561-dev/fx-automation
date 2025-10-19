@@ -1,7 +1,12 @@
 ﻿name: ci-stability
 on:
-  pull_request: { types: [opened, reopened, synchronize] }
-  workflow_dispatch: {}
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      run_label:
+        description: "Optional label for manual run"
+        required: false
 permissions: { contents: read }
 concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
 
