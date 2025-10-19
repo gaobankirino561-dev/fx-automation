@@ -1,7 +1,9 @@
 ﻿name: ci-stability
 on:
-  pull_request: { types: [opened, reopened, synchronize] }
-  workflow_dispatch: {}
+  push:
+    branches: [ master ]
+  pull_request:
+    types: [opened, reopened, synchronize]
 permissions: { contents: read }
 concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
 
@@ -68,7 +70,7 @@ PY
       - name: Upload metrics (per case)
         if: always()
         uses: actions/upload-artifact@v4
-        with: { name: metrics-matrix, path: metrics/**/metrics.json }
+        with: { name: metrics-matrix, path: metrics/${{ matrix.id }}/metrics.json }
 
   aggregate_gate:
     needs: [matrix_backtest]
