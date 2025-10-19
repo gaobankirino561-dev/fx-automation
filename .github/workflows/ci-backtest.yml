@@ -11,6 +11,10 @@ concurrency:
 jobs:
   backtest_and_gate:
     runs-on: ubuntu-latest
+    env:
+      BACKTEST_MODE: ci_offline
+      OPENAI_DISABLED: "1"
+      NO_MT5: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
