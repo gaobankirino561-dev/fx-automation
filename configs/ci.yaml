@@ -1,0 +1,5 @@
+﻿pair: USDJPY
+lot: 0.1
+timeframe: [M15, H1, H4]
+period: { start: 2024-05-01, end: 2024-05-31 }
+output: metrics.json
