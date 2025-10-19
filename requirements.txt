@@ -1,0 +1,1 @@
+﻿# No third-party dependencies. Standard library only; add here if that changes.
