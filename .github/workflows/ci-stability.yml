@@ -36,15 +36,13 @@ jobs:
           pip install pyyaml
       - name: Ensure config
         run: |
-          test -f configs/ci.yaml || printf 'pair: USDJPY\ntimeframe: [M15]\nperiod: { start: 2024-05-01, end: 2024-05-31 }\noutput: metrics.json\n' > configs/ci.yaml
+          test -f configs/ci.yaml || printf 'pair: USDJPY\nperiod: { start: 2024-05-01, end: 2024-05-31 }\noutput: metrics.json\n' > configs/ci.yaml
       - name: Find or stub entry
         shell: bash
         run: |
           set -euo pipefail
           ENTRY=$(git ls-files | grep -E '(^|/)run_backtest\.py$|(^|/)backtest_full_bot\.py$' | head -n1 || true)
-          if [ -z "${ENTRY:-}" ]; then
-            echo "::warning::No entry on master; using stub"; ENTRY="ci/backtest_stub.py"
-          fi
+          if [ -z "${ENTRY:-}" ]; then echo "::warning::No entry on master; using stub"; ENTRY="ci/backtest_stub.py"; fi
           echo "ENTRY=$ENTRY" >> $GITHUB_ENV
       - name: Build case config
         env: { pair: ${{ matrix.pair }}, start: ${{ matrix.start }}, end: ${{ matrix.end }} }
@@ -70,7 +68,7 @@ PY
       - name: Upload metrics (per case)
         if: always()
         uses: actions/upload-artifact@v4
-        with: { name: metrics-matrix, path: metrics/${{ matrix.id }}/metrics.json }
+        with: { name: metrics-matrix, path: metrics/**/metrics.json }
 
   aggregate_gate:
     needs: [matrix_backtest]
