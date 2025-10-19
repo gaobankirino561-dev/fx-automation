@@ -4,6 +4,7 @@ on:
   workflow_dispatch: {}
 permissions: { contents: read }
 concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
+
 jobs:
   matrix_backtest:
     runs-on: ubuntu-latest
@@ -42,11 +43,21 @@ cfg=yaml.safe_load(open("configs/ci.yaml","r",encoding="utf-8"))
 cfg["pair"]=os.environ["pair"]; cfg["period"]={"start":os.environ["start"],"end":os.environ["end"]}
 open(f"_ci_${{ matrix.id }}.yaml","w",encoding="utf-8").write(yaml.safe_dump(cfg,allow_unicode=True,sort_keys=False))
 PY
-      - name: Run backtest
+      - name: Run backtest (always produce metrics)
+        shell: bash
+        env:
+          CASE_ID: ${{ matrix.id }}
         run: |
-          mkdir -p metrics/${{ matrix.id }}
-          python "$ENTRY" --config "_ci_${{ matrix.id }}.yaml" --out "metrics/${{ matrix.id }}/metrics.json"
-      - name: Upload metrics
+          set -euo pipefail
+          mkdir -p "metrics/${CASE_ID}"
+          if python "$ENTRY" --config "_ci_${CASE_ID}.yaml" --out "metrics/${CASE_ID}/metrics.json"; then
+            echo "case ${CASE_ID}: backtest OK"
+          else
+            echo "::warning::case ${CASE_ID}: backtest failed, emitting failing metrics"
+            printf '{"net_profit": -1, "win_rate": 0.0, "max_drawdown": 1.0, "trades": 0, "error": "backtest_failed"}' > "metrics/${CASE_ID}/metrics.json"
+          fi
+      - name: Upload metrics (per case)
+        if: always()
         uses: actions/upload-artifact@v4
         with: { name: metrics-matrix, path: metrics/**/metrics.json }
 
@@ -61,4 +72,5 @@ PY
         with: { python-version: "3.11" }
       - name: Aggregate gate
         run: |
-          python scripts/aggregate_gate.py --root metrics --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 --min_pass_rate 1.0
+          python scripts/aggregate_gate.py --root metrics \
+            --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 --min_pass_rate 1.0
