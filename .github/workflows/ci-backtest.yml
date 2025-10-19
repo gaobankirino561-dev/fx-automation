@@ -37,3 +37,4 @@ jobs:
       - name: Gate (net>0, win≥45%, DD≤20%, trades≥30)
         run: |
           python scripts/gate_metrics.py --file metrics.json --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
+
