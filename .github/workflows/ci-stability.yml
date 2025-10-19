@@ -1,59 +1,64 @@
 ﻿name: ci-stability
 on:
-  pull_request:
-    branches: [ master ]
-  workflow_dispatch:
+  pull_request: { types: [opened, reopened, synchronize] }
+  workflow_dispatch: {}
+permissions: { contents: read }
+concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
 jobs:
   matrix_backtest:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        pair: [USDJPY, EURJPY, EURUSD]
-        period: ["2024-05-01..2024-05-31", "2024-01-01..2024-06-30"]
-    env:
-      BACKTEST_MODE: ci_offline
-      OPENAI_DISABLED: "1"
-      NO_MT5: "1"
+        include:
+          - id: usd_may  ; pair: USDJPY ; start: 2024-05-01 ; end: 2024-05-31
+          - id: usd_jun  ; pair: USDJPY ; start: 2024-06-01 ; end: 2024-06-30
+          - id: eur_may  ; pair: EURUSD ; start: 2024-05-01 ; end: 2024-05-31
+          - id: eur_jun  ; pair: EURUSD ; start: 2024-06-01 ; end: 2024-06-30
+    env: { BACKTEST_MODE: ci_offline, OPENAI_DISABLED: "1", NO_MT5: "1" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+        with: { python-version: "3.11" }
       - name: Install deps
         run: |
           python -m pip install -U pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: Prepare config
+          pip install pyyaml
+      - name: Find entry
+        id: ent
+        shell: bash
         run: |
-          mkdir -p configs metrics/${{ matrix.pair }}/
-          cat <<EOF > configs/matrix_ci.yaml
-pair: ${{ matrix.pair }}
-period: "${{ matrix.period }}"
-output: metrics/${{ matrix.pair }}/metrics.json
-EOF
+          set -euo pipefail
+          ENTRY=$(git ls-files | grep -E '(^|/)run_backtest\.py$|(^|/)backtest_full_bot\.py$' | head -n1 || true)
+          [ -z "${ENTRY:-}" ] && echo "::error::No backtest entry found" && exit 1
+          echo "ENTRY=$ENTRY" >> $GITHUB_ENV
+      - name: Build case config
+        env: { pair: ${{ matrix.pair }}, start: ${{ matrix.start }}, end: ${{ matrix.end }} }
+        run: |
+          python - <<'PY'
+import yaml, os
+cfg=yaml.safe_load(open("configs/ci.yaml","r",encoding="utf-8"))
+cfg["pair"]=os.environ["pair"]; cfg["period"]={"start":os.environ["start"],"end":os.environ["end"]}
+open(f"_ci_${{ matrix.id }}.yaml","w",encoding="utf-8").write(yaml.safe_dump(cfg,allow_unicode=True,sort_keys=False))
+PY
       - name: Run backtest
         run: |
-          python run_backtest.py --config configs/matrix_ci.yaml --out metrics/${{ matrix.pair }}/metrics.json
+          mkdir -p metrics/${{ matrix.id }}
+          python "$ENTRY" --config "_ci_${{ matrix.id }}.yaml" --out "metrics/${{ matrix.id }}/metrics.json"
       - name: Upload metrics
         uses: actions/upload-artifact@v4
-        with:
-          name: metrics-${{ matrix.pair }}-${{ matrix.period }}
-          path: metrics/${{ matrix.pair }}/metrics.json
+        with: { name: metrics-matrix, path: metrics/**/metrics.json }
+
   aggregate_gate:
     runs-on: ubuntu-latest
-    needs: matrix_backtest
+    needs: [matrix_backtest]
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: metrics-matrix, path: metrics }
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Download metrics
-        uses: actions/download-artifact@v4
-        with:
-          pattern: metrics-*
-          path: metrics
-          merge-multiple: true
-      - name: Aggregate gate (Phase-B)
+        with: { python-version: "3.11" }
+      - name: Aggregate gate
         run: |
-          python scripts/aggregate_gate.py --root metrics --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 --min_pass_rate 0.67
+          python scripts/aggregate_gate.py --root metrics --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 --min_pass_rate 1.0
