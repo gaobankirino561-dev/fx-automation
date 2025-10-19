@@ -6,28 +6,24 @@ permissions: { contents: read }
 concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
 
 jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "smoke ok; event=${{ github.event_name }} ref=${{ github.ref }} sha=${{ github.sha }}"
+          echo "timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
   matrix_backtest:
+    needs: [smoke]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - id: usd_may
-            pair: USDJPY
-            start: 2024-05-01
-            end: 2024-05-31
-          - id: usd_jun
-            pair: USDJPY
-            start: 2024-06-01
-            end: 2024-06-30
-          - id: eur_may
-            pair: EURUSD
-            start: 2024-05-01
-            end: 2024-05-31
-          - id: eur_jun
-            pair: EURUSD
-            start: 2024-06-01
-            end: 2024-06-30
+          - id: usd_may  ; pair: USDJPY ; start: 2024-05-01 ; end: 2024-05-31
+          - id: usd_jun  ; pair: USDJPY ; start: 2024-06-01 ; end: 2024-06-30
+          - id: eur_may  ; pair: EURUSD ; start: 2024-05-01 ; end: 2024-05-31
+          - id: eur_jun  ; pair: EURUSD ; start: 2024-06-01 ; end: 2024-06-30
     env: { BACKTEST_MODE: ci_offline, OPENAI_DISABLED: "1", NO_MT5: "1" }
     steps:
       - uses: actions/checkout@v4
@@ -57,8 +53,7 @@ open(f"_ci_${{ matrix.id }}.yaml","w",encoding="utf-8").write(yaml.safe_dump(cfg
 PY
       - name: Run backtest (always produce metrics)
         shell: bash
-        env:
-          CASE_ID: ${{ matrix.id }}
+        env: { CASE_ID: ${{ matrix.id }} }
         run: |
           set -euo pipefail
           mkdir -p "metrics/${CASE_ID}"
@@ -74,8 +69,8 @@ PY
         with: { name: metrics-matrix, path: metrics/**/metrics.json }
 
   aggregate_gate:
-    runs-on: ubuntu-latest
     needs: [matrix_backtest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
