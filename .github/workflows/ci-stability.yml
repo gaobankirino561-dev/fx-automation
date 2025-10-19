@@ -12,10 +12,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: usd_may  ; pair: USDJPY ; start: 2024-05-01 ; end: 2024-05-31
-          - id: usd_jun  ; pair: USDJPY ; start: 2024-06-01 ; end: 2024-06-30
-          - id: eur_may  ; pair: EURUSD ; start: 2024-05-01 ; end: 2024-05-31
-          - id: eur_jun  ; pair: EURUSD ; start: 2024-06-01 ; end: 2024-06-30
+          - id: usd_may
+            pair: USDJPY
+            start: 2024-05-01
+            end: 2024-05-31
+          - id: usd_jun
+            pair: USDJPY
+            start: 2024-06-01
+            end: 2024-06-30
+          - id: eur_may
+            pair: EURUSD
+            start: 2024-05-01
+            end: 2024-05-31
+          - id: eur_jun
+            pair: EURUSD
+            start: 2024-06-01
+            end: 2024-06-30
     env: { BACKTEST_MODE: ci_offline, OPENAI_DISABLED: "1", NO_MT5: "1" }
     steps:
       - uses: actions/checkout@v4
