@@ -1,1 +1,42 @@
-﻿(↑上のYAMLを貼り付け)
+﻿name: ci(stability)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  stability-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify file changes
+        id: check
+        run: |
+          echo "CHECK=$( [ -f requirements.txt ] || [ -d tests ] && echo true || echo false )" >> $GITHUB_ENV
+
+      - name: Stop if no changes detected
+        if: env.CHECK != 'true'
+        run: echo "No relevant file changes detected — skipping job." && exit 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run metrics stub
+        run: |
+          python scripts/metrics_stub.py
+
+      - name: Aggregate results
+        run: |
+          python scripts/aggregate_gate.py --root metrics
