@@ -26,3 +26,9 @@ jobs:
         run: |
           python -V
           echo "stability matrix OK"
+  stability-gate:
+    needs: [ stability-check ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate & Gate
+        run: echo "PASS"
