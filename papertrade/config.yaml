@@ -1,0 +1,4 @@
+pair: USDJPY
+timeframe: M15
+seed: 1729
+initial_equity_jpy: 50000

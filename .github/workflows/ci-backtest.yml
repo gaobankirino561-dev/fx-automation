@@ -1,43 +1,56 @@
-﻿name: ci-backtest
+name: ci-backtest
+
 on:
-  pull_request: { types: [opened, reopened, synchronize] }
   workflow_dispatch: {}
-permissions: { contents: read }
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  schedule:
+    - cron: "30 2 * * *"   # UTC 02:30 (JST 11:30)
+
 jobs:
   backtest_and_gate:
     runs-on: ubuntu-latest
-    env:
-      BACKTEST_MODE: ci_offline
-      OPENAI_DISABLED: "1"
-      NO_MT5: "1"
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - name: Install deps
-        run: |
-          python -m pip install -U pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: Find and run backtest
+
+      - name: Generate metrics from logs (deterministic)
+        env:
+          RISK_CFG: ${{ secrets.RISK_CFG }}
+          INITIAL_EQUITY: "50000"
         shell: bash
         run: |
           set -euo pipefail
-          ENTRY=$(git ls-files | grep -E '(^|/)run_backtest\.py$|(^|/)backtest_full_bot\.py$' | head -n1 || true)
-          if [ -z "${ENTRY:-}" ]; then ENTRY="ci/backtest_stub.py"; fi
-          echo "Using entrypoint: $ENTRY"
-          test -f configs/ci.yaml || { echo "::error::configs/ci.yaml not found"; exit 1; }
-          if python "$ENTRY" --config configs/ci.yaml --out metrics.json 2>/dev/null; then :; else python "$ENTRY"; fi
-      - name: Upload metrics
+          DATE=$(date -u +%Y%m%d)
+          rm -f metrics/metrics.csv || true
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 \
+            --logs papertrade/logs/${DATE}_USDJPY_M15.csv
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1 --seed 1730 \
+            --logs papertrade/logs/${DATE}_USDJPY_H1.csv
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4 --seed 1731 \
+            --logs papertrade/logs/${DATE}_USDJPY_H4.csv
+          cat metrics/metrics.csv
+
+      - name: Gate (risk-aware thresholds)
+        run: |
+          python scripts/aggregate_gate.py --root metrics \
+            --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 \
+            --min_pass_rate 1.0
+
+      - name: Upload metrics artifact
         uses: actions/upload-artifact@v4
-        with: { name: metrics, path: metrics.json }
-      - name: Gate
-        run: |
-          python scripts/gate_metrics.py --file metrics.json --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
-      - name: Debug (always)
+        with:
+          name: metrics-pack
+          path: metrics/metrics.csv
+
+      - name: Notify Discord
         if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          echo "== files =="; git ls-files | sed -n '1,200p'
-          echo "== metrics =="; [ -f metrics.json ] && cat metrics.json || echo "no metrics"
+          STATUS="${{ job.status }}"
+          if [ -n "$WEBHOOK" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK"
+          else
+            echo "DISCORD_WEBHOOK not set; skip notify."
