@@ -11,10 +11,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - name: Lightweight smoke backtest
+
+      # 例ケース：同一通貨USDJPY × 期間スライス（将来通貨も追加可）
+      - name: Generate pack metrics
         run: |
-          echo "simulate backtest (lightweight)"
-          echo "PF=1.05 Win=50 DD=10 Trades=35" > metrics.txt
-      - name: Gate (placeholder)
+          python scripts/metrics_stub.py \
+            --root metrics \
+            --cases 2024M05_USDJPY_M15 2024M05_USDJPY_H1 2024M05_USDJPY_H4 \
+            --net 200 --win 0.55 --dd 0.10 --trades 40 --force
+          cat metrics/metrics.csv
+
+      - name: Gate
         run: |
-          if grep -q "PF=1.05" metrics.txt; then echo PASS; else exit 1; fi
+          python scripts/aggregate_gate.py --root metrics \
+            --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 \
+            --min_pass_rate 1.0
