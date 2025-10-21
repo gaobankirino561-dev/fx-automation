@@ -51,6 +51,8 @@ jobs:
           STATUS="${{ job.status }}"
           if [ -n "$WEBHOOK" ]; then
             curl -X POST -H "Content-Type: application/json" \
-                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK"
+                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK" \
+             || echo "Discord notify failed (status=$STATUS)"
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
+          fi
