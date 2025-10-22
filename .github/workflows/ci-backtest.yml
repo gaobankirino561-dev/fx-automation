@@ -109,7 +109,7 @@ jobs:
               "overall_pass": true,
               "cases": []
             }
-            EOF
+EOF
             EOF
             printf "case,status\n" > metrics/gate_report.csv
             printf "# Gate Report (Stub)\n\nNo gate evaluation performed.\n" > metrics/gate_report.md
