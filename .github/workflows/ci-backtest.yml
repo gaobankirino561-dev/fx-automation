@@ -208,11 +208,24 @@ EOF
           fi
           tar -czf metrics-pack.tgz metrics || true
 
+            - name: Debug list before upload
+        if: always()
+        run: |
+          set -e
+          echo "== workspace =="
+          pwd; ls -la
+          echo "== metrics =="
+          mkdir -p metrics || true
+          ls -la metrics || true
+          [ -f metrics/metrics.csv ] && head -n 5 metrics/metrics.csv || true
+          [ -f metrics/report.md ] && head -n 20 metrics/report.md || true
+          [ -f metrics-pack.tgz ] && echo "tgz size:" && wc -c metrics-pack.tgz || true
+
       - name: Upload metrics artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: metrics-pack
+          name: metrics-pack-${{ github.run_id }}
           path: metrics_artifact/
           if-no-files-found: warn
           retention-days: 30
@@ -274,6 +287,7 @@ EOF
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
 
 
 
