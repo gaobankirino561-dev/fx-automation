@@ -1,5 +1,19 @@
 name: manual-kick
-on: { workflow_dispatch: {} }
+on:
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: Optional YYYYMMDD override for metrics run.
+        required: false
+      lookback_days:
+        description: Override log lookback window (days, >=1).
+        required: false
+      min_trades:
+        description: Override minimum trades threshold (>=1).
+        required: false
+      initial_equity:
+        description: Optional override for initial equity (defaults 50000).
+        required: false
 jobs:
   run-ci-backtest:
     uses: ./.github/workflows/ci-backtest.yml
