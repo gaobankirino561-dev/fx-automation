@@ -131,7 +131,9 @@ jobs:
           python scripts/metrics_report.py \
             --metrics-csv metrics/metrics.csv \
             --gate-report metrics/gate_report.json \
-            --output-dir metrics
+            --output-dir metrics \\
+            --markdown-name report.md \\
+            --json-name report.json
 
       - name: Post job summary
         if: always()
