@@ -1,7 +1,5 @@
-﻿name: manual-kick
-on:
-  workflow_dispatch: {}
-
+name: manual-kick
+on: { workflow_dispatch: {} }
 jobs:
   run-ci-backtest:
     uses: ./.github/workflows/ci-backtest.yml
