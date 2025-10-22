@@ -224,13 +224,16 @@ jobs:
           PASS_RATE: ${{ steps.passrate.outputs.rate_pct }}
         run: |
           if [ -n "$WEBHOOK" ]; then
-            RATE_MSG="N/A"
-            if [ -n "$PASS_RATE" ]; then
-              RATE_MSG="${PASS_RATE}%"
+            STATUS="${STATUS}"
+            PR="${PASS_RATE}"
+            if [ -z "$PR" ]; then
+              PR=$(sed -n 's/.*pass_rate = \([0-9.]\+%\).*/\1/p' metrics/report.md 2>/dev/null | head -1)
             fi
-            MSG="ci-backtest: ${STATUS} (pass_rate=${RATE_MSG})"
+            [ -z "$PR" ] && PR="n/a"
+            MSG="ci-backtest: ${STATUS} (pass_rate=${PR})"
             curl -sS -X POST -H "Content-Type: application/json" \
-                 -d "{\"content\":\"${MSG}\"}" "$WEBHOOK" || true
+                 -d "{\"content\":\"${MSG}\"}" "$WEBHOOK" || true >/dev/null
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
