@@ -119,6 +119,33 @@ jobs:
             echo "**report.md missing**" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Open or update Gate failure issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.existsSync('metrics/report.md')
+              ? fs.readFileSync('metrics/report.md','utf8')
+              : '**report.md missing**';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = `Gate failed: run #${context.runNumber}`;
+            const {data: issues} = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, labels: 'gate-failure', state: 'open'
+            });
+            if (issues.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: `Run: ${runUrl}\n\n` + body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body: `Run: ${runUrl}\n\n` + body, labels: ['gate-failure']
+              });
+            }
+
       - name: Prepare metrics artifact bundle
         if: always()
         run: |
@@ -197,10 +224,11 @@ jobs:
           PASS_RATE: ${{ steps.passrate.outputs.rate_pct }}
         run: |
           if [ -n "$WEBHOOK" ]; then
-            MSG="ci-backtest: ${STATUS}"
+            RATE_MSG="N/A"
             if [ -n "$PASS_RATE" ]; then
-              MSG="$MSG (pass_rate=${PASS_RATE}%)"
+              RATE_MSG="${PASS_RATE}%"
             fi
+            MSG="ci-backtest: ${STATUS} (pass_rate=${RATE_MSG})"
             curl -sS -X POST -H "Content-Type: application/json" \
                  -d "{\"content\":\"${MSG}\"}" "$WEBHOOK" || true
           else
