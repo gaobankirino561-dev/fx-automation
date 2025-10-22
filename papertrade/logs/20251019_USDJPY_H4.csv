@@ -1,0 +1,2 @@
+time_open,time_close,side,lot,price_open,price_close,profit_jpy,commission_jpy,swap_jpy
+2025-10-19T00:00:00Z,2025-10-19T04:00:00Z,SELL,0.10,150.600,150.100,5000,-120,0
