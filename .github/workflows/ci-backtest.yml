@@ -197,6 +197,17 @@ EOF
             cp metrics_replay/metrics.csv metrics_artifact/metrics_replay.csv
           fi
 
+            - name: Always archive metrics dir
+        if: always()
+        run: |
+          set -e
+          mkdir -p metrics
+          # 最低限のCSVを用意（失敗時でも収集できるように）
+          if [ ! -f metrics/metrics.csv ]; then
+            printf "case,net,win,dd,trades\nstub,0,0,0,0\n" > metrics/metrics.csv
+          fi
+          tar -czf metrics-pack.tgz metrics || true
+
       - name: Upload metrics artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -263,5 +274,6 @@ EOF
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
 
 
