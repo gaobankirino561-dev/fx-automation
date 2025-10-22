@@ -14,11 +14,11 @@ with open(a.csv, newline="", encoding="utf-8") as f:
     for x in r:
         rows.append(dict(case=x["case"], net=float(x["net"]),
                          win=float(x["win"]), dd=float(x["dd"]),
-                         trades=int(x["trades"])))
-def ok(z): return (z["net"]>a.min_net and z["win"]>=a.min_win and
-                   z["dd"]<=a.max_dd and z["trades"]>=a.min_trades)
-pass_rate = (sum(1 for z in rows if ok(z))/len(rows)) if rows else 0.0
-with open(a.out,"w",encoding="utf-8") as f:
+                         trades=int(x["trades"])) )
+def ok(z):
+    return z["net"] > a.min_net and z["win"] >= a.min_win and z["dd"] <= a.max_dd and z["trades"] >= a.min_trades
+pass_rate = (sum(1 for z in rows if ok(z)) / len(rows)) if rows else 0.0
+with open(a.out, "w", encoding="utf-8") as f:
     f.write("# Gate Report\n\n")
     f.write(f"Thresholds: net>{a.min_net}, win>={a.min_win}, dd<={a.max_dd}, trades>={a.min_trades}\n\n")
     f.write("| case | net | win | dd | trades | verdict |\n|---|---:|---:|---:|---:|---|\n")
