@@ -1,10 +1,8 @@
 name: ci-backtest
-
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "30 2 * * *"   # UTC 02:30 (JST 11:30)
-
+    - cron: "30 2 * * *"   # UTC 02:30（JST 11:30）
 jobs:
   backtest_and_gate:
     runs-on: ubuntu-latest
@@ -14,21 +12,42 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
 
-      - name: Generate metrics from logs (deterministic)
+      - name: Preflight logs exist
+        run: |
+          set -e
+          DATE=$(date -u +%Y%m%d)
+          for TF in M15 H1 H4; do
+            FILE="papertrade/logs/${DATE}_USDJPY_${TF}.csv"
+            [[ -f "$FILE" ]] || echo "::warning::missing ${FILE}"
+          done
+
+      - name: Generate metrics from logs (last 7 days, deterministic)
         env:
           RISK_CFG: ${{ secrets.RISK_CFG }}
           INITIAL_EQUITY: "50000"
-        shell: bash
         run: |
-          set -euo pipefail
-          DATE=$(date -u +%Y%m%d)
+          set -e
           rm -f metrics/metrics.csv || true
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 \
-            --logs papertrade/logs/${DATE}_USDJPY_M15.csv
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1 --seed 1730 \
-            --logs papertrade/logs/${DATE}_USDJPY_H1.csv
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4 --seed 1731 \
-            --logs papertrade/logs/${DATE}_USDJPY_H4.csv
+
+          build_list () {
+            TF="$1"
+            FILES=""
+            for i in 0 1 2 3 4 5 6; do
+              D=$(date -u -d "$i day ago" +%Y%m%d)
+              F="papertrade/logs/${D}_USDJPY_${TF}.csv"
+              [[ -f "$F" ]] && FILES="$FILES $F"
+            done
+            echo "$FILES"
+          }
+
+          M15_FILES="$(build_list M15)"; [[ -z "$M15_FILES" ]] && { echo "::error::no logs for M15 (last7)"; exit 2; }
+          H1_FILES="$(build_list H1)";   [[ -z "$H1_FILES"  ]] && { echo "::error::no logs for H1 (last7)";  exit 2; }
+          H4_FILES="$(build_list H4)";   [[ -z "$H4_FILES"  ]] && { echo "::error::no logs for H4 (last7)";  exit 2; }
+
+          DATE=$(date -u +%Y%m%d)
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES
           cat metrics/metrics.csv
 
       - name: Gate (risk-aware thresholds)
@@ -39,20 +58,16 @@ jobs:
 
       - name: Upload metrics artifact
         uses: actions/upload-artifact@v4
-        with:
-          name: metrics-pack
-          path: metrics/metrics.csv
+        with: { name: metrics-pack, path: metrics/metrics.csv }
 
       - name: Notify Discord
         if: always()
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        env: { WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }} }
         run: |
           STATUS="${{ job.status }}"
           if [ -n "$WEBHOOK" ]; then
             curl -X POST -H "Content-Type: application/json" \
-                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK" \
-             || echo "Discord notify failed (status=$STATUS)"
+                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK"
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
