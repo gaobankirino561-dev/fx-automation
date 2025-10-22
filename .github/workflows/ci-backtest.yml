@@ -1,4 +1,4 @@
-﻿name: ci-backtest
+name: ci-backtest
 on:
   workflow_call: {}
   repository_dispatch:
@@ -63,6 +63,7 @@ jobs:
             --min_pass_rate 1.0
 
       - name: Generate Gate report (markdown)
+        if: always()
         run: |
           python scripts/metrics_report.py --csv metrics/metrics.csv \
             --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
@@ -75,6 +76,7 @@ jobs:
           path: |
             metrics/metrics.csv
             metrics/report.md
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Notify Discord
@@ -84,9 +86,9 @@ jobs:
         run: |
           STATUS="${{ job.status }}"
           if [ -n "$WEBHOOK" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK"
+            echo "Discord webhook configured; skipping notify in stub workflow (status=$STATUS)."
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
 
