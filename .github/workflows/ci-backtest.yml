@@ -68,6 +68,7 @@ jobs:
             --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
 
       - name: Upload metrics artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack
@@ -88,3 +89,4 @@ jobs:
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
