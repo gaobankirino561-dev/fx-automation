@@ -9,8 +9,9 @@ p.add_argument("--logs", nargs="*", default=[])
 a=p.parse_args()
 
 random.seed(a.seed)
-pathlib.Path(a.root).mkdir(parents=True, exist_ok=True)
-csv_path = pathlib.Path(a.root) / "metrics.csv"
+root = pathlib.Path(a.root)
+root.mkdir(parents=True, exist_ok=True)
+csv_path = root / "metrics.csv"
 write_header = not csv_path.exists()
 
 net = 200.0
