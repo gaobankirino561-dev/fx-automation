@@ -73,9 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack
-          path: |
-            metrics/metrics.csv
-            metrics/report.md
+          path: metrics/
           if-no-files-found: warn
           retention-days: 30
 
