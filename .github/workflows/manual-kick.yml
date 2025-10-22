@@ -1,6 +1,6 @@
 name: manual-kick
 on: { workflow_dispatch: {} }
 jobs:
-  ci-backtest:
+  run-ci-backtest:
     uses: ./.github/workflows/ci-backtest.yml
     secrets: inherit
