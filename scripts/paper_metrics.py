@@ -1,4 +1,4 @@
-import os, csv, argparse, pathlib, datetime
+import os, csv, argparse, pathlib, datetime, glob
 
 def parse_float(x, default=0.0):
     try:
@@ -6,16 +6,92 @@ def parse_float(x, default=0.0):
     except Exception:
         return default
 
+def parse_case_date(case):
+    token = case.split("_", 1)[0]
+    try:
+        return datetime.datetime.strptime(token, "%Y%m%d").date()
+    except Exception:
+        return None
+
+def parse_filename_date(filename):
+    token = filename.split("_", 1)[0]
+    if len(token) != 8 or not token.isdigit():
+        return None
+    try:
+        return datetime.datetime.strptime(token, "%Y%m%d").date()
+    except Exception:
+        return None
+
+def derive_suffix(case, fallback_path):
+    parts = case.split("_", 1)
+    if len(parts) == 2 and parts[1]:
+        return parts[1] + ".csv"
+    name = os.path.basename(fallback_path)
+    idx = name.find("_")
+    if idx == -1:
+        return name
+    return name[idx + 1 :]
+
+def read_log_rows(fp):
+    if not os.path.exists(fp):
+        return []
+    with open(fp, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+def find_recent_logs(base_path, case, lookback_days):
+    directory = os.path.dirname(base_path) or "."
+    suffix = derive_suffix(case, base_path)
+    pattern = os.path.join(directory, f"*_{suffix}")
+    candidates = sorted(glob.glob(pattern))
+    case_date = parse_case_date(case)
+
+    eligible = []
+    for candidate in reversed(candidates):
+        name = os.path.basename(candidate)
+        file_date = parse_filename_date(name)
+        if case_date and file_date:
+            delta = (case_date - file_date).days
+            if delta < 0:
+                continue
+            if lookback_days >= 0 and delta > lookback_days:
+                continue
+        eligible.append(candidate)
+    return eligible
+
 def load_trades(log_files):
     rows = []
     for fp in log_files:
-        if not os.path.exists(fp):
-            continue
-        with open(fp, newline="", encoding="utf-8") as f:
-            r = csv.DictReader(f)
-            for row in r:
-                rows.append(row)
+        rows.extend(read_log_rows(fp))
     return rows
+
+def load_trades_with_fallback(log_files, case, lookback_days, min_trades):
+    rows = []
+    used_files = []
+    for fp in log_files:
+        current_rows = read_log_rows(fp)
+        if current_rows:
+            rows.extend(current_rows)
+            used_files.append(fp)
+
+    total_trades = len(rows)
+    target = max(1, min_trades)
+    if total_trades >= target:
+        return rows, used_files
+
+    for fp in log_files:
+        for candidate in find_recent_logs(fp, case, lookback_days):
+            if candidate in used_files:
+                continue
+            candidate_rows = read_log_rows(candidate)
+            if not candidate_rows:
+                continue
+            rows.extend(candidate_rows)
+            used_files.append(candidate)
+            total_trades += len(candidate_rows)
+            if total_trades >= target:
+                return rows, used_files
+
+    return rows, used_files
 
 def sort_rows(rows):
     def key(row):
@@ -66,19 +142,21 @@ def main():
     p.add_argument("--seed", type=int, default=1729)
     p.add_argument("--logs", nargs="+", required=True)
     p.add_argument("--initial_equity", type=float, default=float(os.environ.get("INITIAL_EQUITY", "50000")))
+    p.add_argument("--lookback_days", type=int, default=7)
+    p.add_argument("--min_trades", type=int, default=30)
     args = p.parse_args()
 
     pathlib.Path(args.root).mkdir(parents=True, exist_ok=True)
     csv_path = os.path.join(args.root, "metrics.csv")
     write_header = not os.path.exists(csv_path)
 
-    rows = load_trades(args.logs)
+    rows, used_files = load_trades_with_fallback(args.logs, args.case, args.lookback_days, args.min_trades)
     rows = sort_rows(rows)
 
     net, win, dd, trades = compute_metrics(rows, args.initial_equity)
 
     if trades == 0:
-        print("ERROR: no trades found in logs:", args.logs)
+        print("ERROR: no trades found in logs or recent history:", args.logs)
         exit(2)
 
     if write_header:
@@ -88,6 +166,8 @@ def main():
         csv.writer(f).writerow([args.case, f"{net:.2f}", f"{win:.4f}", f"{dd:.4f}", trades])
 
     print(f"Wrote {csv_path} -> case={args.case} net={net:.2f} win={win:.4f} dd={dd:.4f} trades={trades}")
+    if used_files:
+        print("Used log files:", ", ".join(used_files))
 
 if __name__ == "__main__":
     import csv
