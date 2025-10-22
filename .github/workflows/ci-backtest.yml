@@ -1,237 +1,89 @@
 name: ci-backtest
 on:
-  workflow_call:
-    inputs:
-      target_date:
-        required: false
-        type: string
-        description: Override YYYYMMDD used for metrics generation.
-      lookback_days:
-        required: false
-        type: number
-        description: Number of UTC days (>=1) included in log search window.
-      min_trades:
-        required: false
-        type: number
-        description: Minimum trades required for metrics reporting (>=1).
-      initial_equity:
-        required: false
-        type: number
-        description: Override initial equity passed to metrics script.
-    secrets:
-      RISK_CFG:
-        required: false
-      INITIAL_EQUITY:
-        required: false
-      DISCORD_WEBHOOK:
-        required: false
-  workflow_dispatch:
-    inputs:
-      target_date:
-        description: Optional YYYYMMDD override for metrics run.
-        required: false
-      lookback_days:
-        description: Override log lookback window (days, >=1).
-        required: false
-      min_trades:
-        description: Override minimum trades threshold (>=1).
-        required: false
-      initial_equity:
-        description: Optional override for initial equity (defaults 50000).
-        required: false
+  workflow_call: {}
   repository_dispatch:
     types: [manual-backtest]
   schedule:
     - cron: "30 2 * * *"
-    - cron: "*/5 * * * *"  # TEMP
 
 jobs:
   backtest_and_gate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
-      LOOKBACK_DAYS: ${{ inputs.lookback_days || github.event.inputs.lookback_days || '60' }}
-      MIN_TRADES_OVERRIDE: ${{ github.event.inputs.min_trades || '' }}
-      INITIAL_EQUITY: ${{ github.event.inputs.initial_equity || secrets.INITIAL_EQUITY || '50000' }}
-      RISK_CFG: ${{ secrets.RISK_CFG }}
-      WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      LOOKBACK_DAYS: "60"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
+        with:
+          python-version: "3.11"
 
       - name: Preflight logs exist
         run: |
-          set -euo pipefail
-          DATE="${TARGET_DATE:-$(date -u +%Y%m%d)}"
-          if ! [[ "$DATE" =~ ^[0-9]{8}$ ]]; then
-            echo "::error::TARGET_DATE must be YYYYMMDD when provided"
-            exit 2
-          fi
+          set -e
+          DATE=$(date -u +%Y%m%d)
           for TF in M15 H1 H4; do
             FILE="papertrade/logs/${DATE}_USDJPY_${TF}.csv"
             [[ -f "$FILE" ]] || echo "::warning::missing ${FILE}"
           done
 
-      - name: Generate metrics from logs (configurable lookback, deterministic)
+      - name: Generate metrics from logs (last ${{ env.LOOKBACK_DAYS }} days, deterministic)
+        env:
+          RISK_CFG: ${{ secrets.RISK_CFG }}
+          INITIAL_EQUITY: "50000"
         run: |
-          set -euo pipefail
-          DATE="${TARGET_DATE:-$(date -u +%Y%m%d)}"
-          if ! [[ "$DATE" =~ ^[0-9]{8}$ ]]; then
-            echo "::error::TARGET_DATE must be YYYYMMDD when provided"
-            exit 2
-          fi
-
-          LOOKBACK_RAW="${LOOKBACK_DAYS:-60}"
-          if ! [[ "$LOOKBACK_RAW" =~ ^[0-9]+$ ]]; then
-            echo "::error::LOOKBACK_DAYS must be a positive integer"
-            exit 2
-          fi
-          if [ "$LOOKBACK_RAW" -lt 1 ]; then
-            echo "::error::LOOKBACK_DAYS must be >= 1"
-            exit 2
-          fi
-          LOOKBACK="$LOOKBACK_RAW"
-          LOOKBACK_DAYS="$LOOKBACK"
-
-          MIN_TRADES_RAW="${MIN_TRADES_OVERRIDE:-30}"
-          if ! [[ "$MIN_TRADES_RAW" =~ ^[0-9]+$ ]]; then
-            echo "::error::MIN_TRADES must be a positive integer"
-            exit 2
-          fi
-          if [ "$MIN_TRADES_RAW" -lt 1 ]; then
-            echo "::error::MIN_TRADES must be >= 1"
-            exit 2
-          fi
-          MIN_TRADES="$MIN_TRADES_RAW"
-
-          export INITIAL_EQUITY="${INITIAL_EQUITY:-50000}"
-
+          set -e
           rm -f metrics/metrics.csv || true
 
-          BASE_DATE="${DATE:0:4}-${DATE:4:2}-${DATE:6:2}"
           build_list () {
-            local TF="$1"
-            local FILES=""
+            TF=$1"
+            FILES="
             for i in $(seq 0 $((LOOKBACK_DAYS - 1))); do
-              D=$(date -u -d "${BASE_DATE} -${i} day" +%Y%m%d)
+              D=$(date -u -d "$i day ago" +%Y%m%d)
               F="papertrade/logs/${D}_USDJPY_${TF}.csv"
-              [[ -f "$F" ]] && FILES="$FILES $F"
+              [[ -f "$F" ]] && FILES=$FILES $F"
             done
             echo "$FILES"
           }
 
-          M15_FILES="$(build_list M15)"; [[ -z "$M15_FILES" ]] && { echo "::error::no logs for M15 (last window)"; exit 2; }
-          H1_FILES="$(build_list H1)";   [[ -z "$H1_FILES"  ]] && { echo "::error::no logs for H1 (last window)";  exit 2; }
-          H4_FILES="$(build_list H4)";   [[ -z "$H4_FILES"  ]] && { echo "::error::no logs for H4 (last window)";  exit 2; }
+          M15_FILES=$(build_list M15); [[ -z "$M15_FILES" ]] && { echo "::error::no logs for M15 (last${LOOKBACK_DAYS})"; exit 2; }
+          H1_FILES=$(build_list H1);   [[ -z "$H1_FILES"  ]] && { echo "::error::no logs for H1 (last${LOOKBACK_DAYS})";  exit 2; }
+          H4_FILES=$(build_list H4);   [[ -z "$H4_FILES"  ]] && { echo "::error::no logs for H4 (last${LOOKBACK_DAYS})";  exit 2; }
 
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES --lookback_days "$LOOKBACK" --min_trades "$MIN_TRADES"
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES --lookback_days "$LOOKBACK" --min_trades "$MIN_TRADES"
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES --lookback_days "$LOOKBACK" --min_trades "$MIN_TRADES"
+          DATE=$(date -u +%Y%m%d)
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES
           cat metrics/metrics.csv
 
       - name: Gate (risk-aware thresholds)
         run: |
-          set -euo pipefail
-          DATE="${TARGET_DATE:-$(date -u +%Y%m%d)}"
-          if ! [[ "$DATE" =~ ^[0-9]{8}$ ]]; then
-            echo "::error::TARGET_DATE must be YYYYMMDD when provided"
-            exit 2
-          fi
-
-          LOOKBACK_RAW="${LOOKBACK_DAYS:-60}"
-          if ! [[ "$LOOKBACK_RAW" =~ ^[0-9]+$ ]]; then
-            echo "::error::LOOKBACK_DAYS must be a positive integer"
-            exit 2
-          fi
-          if [ "$LOOKBACK_RAW" -lt 1 ]; then
-            echo "::error::LOOKBACK_DAYS must be >= 1"
-            exit 2
-          fi
-
-          MIN_TRADES_RAW="${MIN_TRADES_OVERRIDE:-30}"
-          if ! [[ "$MIN_TRADES_RAW" =~ ^[0-9]+$ ]]; then
-            echo "::error::MIN_TRADES must be a positive integer"
-            exit 2
-          fi
-          if [ "$MIN_TRADES_RAW" -lt 1 ]; then
-            echo "::error::MIN_TRADES must be >= 1"
-            exit 2
-          fi
-
-          python scripts/aggregate_gate.py \
-            --logs-dir papertrade/logs \
-            --output-dir metrics \
-            --lookback-days "$LOOKBACK_RAW" \
-            --as-of "$DATE" \
-            --min-net 0 \
-            --min-win 0.45 \
-            --max-dd 0.20 \
-            --min-trades "$MIN_TRADES_RAW" \
-            --kill-switch
+          python scripts/aggregate_gate.py --root metrics \
+            --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 \
+            --min_pass_rate 1.0
 
       - name: Generate Gate report (markdown)
         run: |
-          set -euo pipefail
-          MIN_TRADES_RAW="${MIN_TRADES_OVERRIDE:-30}"
-          if ! [[ "$MIN_TRADES_RAW" =~ ^[0-9]+$ ]]; then
-            echo "::error::MIN_TRADES must be a positive integer"
-            exit 2
-          fi
-          if [ "$MIN_TRADES_RAW" -lt 1 ]; then
-            echo "::error::MIN_TRADES must be >= 1"
-            exit 2
-          fi
-          python scripts/metrics_report.py \
-            --csv metrics/metrics.csv \
-            --out metrics/report.md \
-            --min_net 0 \
-            --min_win 0.45 \
-            --max_dd 0.20 \
-            --min_trades "$MIN_TRADES_RAW"
-          echo ""
-          echo "metrics/report.md preview:"
-          cat metrics/report.md
-
-      - name: Prepare metrics artifact bundle
-        run: |
-          set -euo pipefail
-          rm -rf metrics_artifact
-          mkdir -p metrics_artifact/metrics
-          cp metrics/metrics.csv metrics_artifact/metrics/
-          cp metrics/report.md metrics_artifact/metrics/
-          if [[ -f metrics/gate_report.json ]]; then
-            cp metrics/gate_report.json metrics_artifact/metrics/
-          fi
-          if [[ -f metrics/gate_report.md ]]; then
-            cp metrics/gate_report.md metrics_artifact/metrics/
-          fi
-          if [[ -f metrics/gate_report.csv ]]; then
-            cp metrics/gate_report.csv metrics_artifact/metrics/
-          fi
+          python scripts/metrics_report.py --csv metrics/metrics.csv \
+            --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
 
       - name: Upload metrics artifact
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack
-          path: metrics_artifact/
+          path: |
+            metrics/metrics.csv
+            metrics/report.md
           retention-days: 30
+
       - name: Notify Discord
         if: always()
+        env: { WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }} }
         run: |
           STATUS="${{ job.status }}"
           if [ -n "$WEBHOOK" ]; then
             curl -X POST -H "Content-Type: application/json" \
-                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK" \
-              || echo "Discord notify failed (status=$STATUS)"
+                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK"
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
-
-
-
-
-
-
-
