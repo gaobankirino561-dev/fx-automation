@@ -194,11 +194,28 @@ jobs:
           echo "metrics/report.md preview:"
           cat metrics/report.md
 
+      - name: Prepare metrics artifact bundle
+        run: |
+          set -euo pipefail
+          rm -rf metrics_artifact
+          mkdir -p metrics_artifact/metrics
+          cp metrics/metrics.csv metrics_artifact/metrics/
+          cp metrics/report.md metrics_artifact/metrics/
+          if [[ -f metrics/gate_report.json ]]; then
+            cp metrics/gate_report.json metrics_artifact/metrics/
+          fi
+          if [[ -f metrics/gate_report.md ]]; then
+            cp metrics/gate_report.md metrics_artifact/metrics/
+          fi
+          if [[ -f metrics/gate_report.csv ]]; then
+            cp metrics/gate_report.csv metrics_artifact/metrics/
+          fi
+
       - name: Upload metrics artifact
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack
-          path: metrics/
+          path: metrics_artifact/
           retention-days: 30
       - name: Notify Discord
         if: always()
