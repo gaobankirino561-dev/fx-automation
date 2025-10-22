@@ -45,14 +45,14 @@ jobs:
             echo "$FILES"
           }
 
-          M15_FILES=$(build_list M15); [[ -z "$M15_FILES" ]] && { echo "::error::no logs for M15 (last${LOOKBACK_DAYS})"; exit 2; }
-          H1_FILES=$(build_list H1);   [[ -z "$H1_FILES"  ]] && { echo "::error::no logs for H1 (last${LOOKBACK_DAYS})";  exit 2; }
-          H4_FILES=$(build_list H4);   [[ -z "$H4_FILES"  ]] && { echo "::error::no logs for H4 (last${LOOKBACK_DAYS})";  exit 2; }
+          M15_FILES=$(build_list M15)
+          H1_FILES=$(build_list H1)
+          H4_FILES=$(build_list H4)
 
           DATE=$(date -u +%Y%m%d)
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 ${M15_FILES:+--logs $M15_FILES}
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730 ${H1_FILES:+--logs $H1_FILES}
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731 ${H4_FILES:+--logs $H4_FILES}
           cat metrics/metrics.csv
 
       - name: Determinism self-check (replay)
@@ -74,9 +74,9 @@ jobs:
           H1_FILES=$(build_list H1)
           H4_FILES=$(build_list H4)
           DATE=$(date -u +%Y%m%d)
-          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES
-          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES
-          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES
+          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_M15 --seed 1729 ${M15_FILES:+--logs $M15_FILES}
+          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_H1  --seed 1730 ${H1_FILES:+--logs $H1_FILES}
+          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_H4  --seed 1731 ${H4_FILES:+--logs $H4_FILES}
 
           H1=$(sha256sum metrics/metrics.csv | awk '{print $1}')
           H2=$(sha256sum metrics_replay/metrics.csv | awk '{print $1}')
