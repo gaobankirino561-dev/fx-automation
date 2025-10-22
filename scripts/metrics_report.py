@@ -39,7 +39,7 @@ def _resolve_field_map(fieldnames: List[str]) -> Dict[str, str]:
     return mapped
 
 
-def load_metrics_rows(path: pathlib.Path) -> List<MetricsRow>:
+def load_metrics_rows(path: pathlib.Path) -> List[MetricsRow]:
     if not path.exists():
         raise FileNotFoundError(f"Metrics CSV not found: {path}")
     rows: List[MetricsRow] = []

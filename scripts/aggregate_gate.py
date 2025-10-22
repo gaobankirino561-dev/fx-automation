@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import pathlib
 import sys
@@ -12,6 +13,17 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from gate.report import GateReport, GateThresholds, build_report, render_csv, render_markdown  # noqa: E402
+
+
+def _parse_as_of(value: str | None) -> dt.date | None:
+    if not value:
+        return None
+    try:
+        return dt.datetime.strptime(value, "%Y%m%d").date()
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"Invalid --as-of value {value!r}; expected YYYYMMDD"
+        ) from exc
 
 
 def parse_args() -> argparse.Namespace:
@@ -85,7 +97,7 @@ def main() -> int:
         thresholds=thresholds,
         lookback_days=args.lookback_days,
         initial_equity=args.initial_equity,
-        as_of=args.as_of,
+        as_of=_parse_as_of(args.as_of),
     )
 
     emitted = write_outputs(
