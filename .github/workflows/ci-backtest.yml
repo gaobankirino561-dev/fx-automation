@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 20
     env:
       TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
-      LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '' }}
+      LOOKBACK_DAYS: ${{ inputs.lookback_days || github.event.inputs.lookback_days || '30' }}
       MIN_TRADES_OVERRIDE: ${{ github.event.inputs.min_trades || '' }}
       INITIAL_EQUITY: ${{ github.event.inputs.initial_equity || secrets.INITIAL_EQUITY || '50000' }}
       RISK_CFG: ${{ secrets.RISK_CFG }}
