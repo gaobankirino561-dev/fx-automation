@@ -49,10 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      TARGET_DATE: ${{ inputs.target_date || github.event.inputs.target_date || '' }}
-      LOOKBACK_DAYS: ${{ inputs.lookback_days || github.event.inputs.lookback_days || '' }}
-      MIN_TRADES_OVERRIDE: ${{ inputs.min_trades || github.event.inputs.min_trades || '' }}
-      INITIAL_EQUITY: ${{ inputs.initial_equity || github.event.inputs.initial_equity || secrets.INITIAL_EQUITY || '50000' }}
+      TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+      LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '' }}
+      MIN_TRADES_OVERRIDE: ${{ github.event.inputs.min_trades || '' }}
+      INITIAL_EQUITY: ${{ github.event.inputs.initial_equity || secrets.INITIAL_EQUITY || '50000' }}
       RISK_CFG: ${{ secrets.RISK_CFG }}
       WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
@@ -147,7 +147,8 @@ jobs:
           STATUS="${{ job.status }}"
           if [ -n "$WEBHOOK" ]; then
             curl -X POST -H "Content-Type: application/json" \
-                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK"
+                 -d "{\"content\":\"ci-backtest: ${STATUS}\"}" "$WEBHOOK" \
+              || echo "Discord notify failed (status=$STATUS)"
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
