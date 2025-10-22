@@ -68,12 +68,20 @@ jobs:
           python scripts/metrics_report.py --csv metrics/metrics.csv \
             --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
 
+      - name: Prepare metrics artifact bundle
+        if: always()
+        run: |
+          rm -rf metrics_artifact
+          mkdir -p metrics_artifact/metrics
+          cp metrics/metrics.csv metrics_artifact/metrics/
+          cp metrics/report.md metrics_artifact/metrics/
+
       - name: Upload metrics artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack
-          path: metrics/
+          path: metrics_artifact/
           if-no-files-found: warn
           retention-days: 30
 
