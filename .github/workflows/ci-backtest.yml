@@ -27,59 +27,121 @@ jobs:
             [[ -f "$FILE" ]] || echo "::warning::missing ${FILE}"
           done
 
-      - name: Generate metrics from logs (stubbed)
+      - name: Generate metrics from logs (last ${{ env.LOOKBACK_DAYS }} days, deterministic)
         env:
+          RISK_CFG: ${{ secrets.RISK_CFG }}
           INITIAL_EQUITY: "50000"
         run: |
           set -e
           rm -f metrics/metrics.csv || true
+
+          build_list () {
+            TF="$1"; FILES=""
+            for i in $(seq 0 $((LOOKBACK_DAYS-1))); do
+              D=$(date -u -d "$i day ago" +%Y%m%d)
+              F="papertrade/logs/${D}_USDJPY_${TF}.csv"
+              [[ -f "$F" ]] && FILES="$FILES $F"
+            done
+            echo "$FILES"
+          }
+
+          M15_FILES=$(build_list M15); [[ -z "$M15_FILES" ]] && { echo "::error::no logs for M15 (last${LOOKBACK_DAYS})"; exit 2; }
+          H1_FILES=$(build_list H1);   [[ -z "$H1_FILES"  ]] && { echo "::error::no logs for H1 (last${LOOKBACK_DAYS})";  exit 2; }
+          H4_FILES=$(build_list H4);   [[ -z "$H4_FILES"  ]] && { echo "::error::no logs for H4 (last${LOOKBACK_DAYS})";  exit 2; }
+
           DATE=$(date -u +%Y%m%d)
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730
-          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES
+          python scripts/paper_metrics.py --root metrics --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES
           cat metrics/metrics.csv
 
-      - name: Gate (risk-aware thresholds)
-        if: always()
+      - name: Determinism self-check (replay)
         run: |
           set -e
-          mkdir -p metrics
-          cat > metrics/gate_report.json <<'EOF'
-          {
-            "generated_at": "stub",
-            "overall_pass": true,
-            "cases": [
-              {"case": "USDJPY_M15", "passed": true, "fail_reasons": []},
-              {"case": "USDJPY_H1", "passed": true, "fail_reasons": []},
-              {"case": "USDJPY_H4", "passed": true, "fail_reasons": []}
-            ]
-          }
-          EOF
-          cat > metrics/gate_report.md <<'EOF'
-          # Gate Report (Stub)
+          rm -rf metrics_replay || true
 
-          All cases PASS in stub workflow.
-          EOF
-          cat > metrics/gate_report.csv <<'EOF'
-          case,status
-          USDJPY_M15,PASS
-          USDJPY_H1,PASS
-          USDJPY_H4,PASS
-          EOF
+          build_list () {
+            TF="$1"; FILES=""
+            for i in $(seq 0 $((LOOKBACK_DAYS-1))); do
+              D=$(date -u -d "$i day ago" +%Y%m%d)
+              F="papertrade/logs/${D}_USDJPY_${TF}.csv"
+              [[ -f "$F" ]] && FILES="$FILES $F"
+            done
+            echo "$FILES"
+          }
+
+          M15_FILES=$(build_list M15)
+          H1_FILES=$(build_list H1)
+          H4_FILES=$(build_list H4)
+          DATE=$(date -u +%Y%m%d)
+          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_M15 --seed 1729 --logs $M15_FILES
+          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_H1  --seed 1730 --logs $H1_FILES
+          python scripts/paper_metrics.py --root metrics_replay --case ${DATE}_USDJPY_H4  --seed 1731 --logs $H4_FILES
+
+          H1=$(sha256sum metrics/metrics.csv | awk '{print $1}')
+          H2=$(sha256sum metrics_replay/metrics.csv | awk '{print $1}')
+          echo "hash(original)=$H1  hash(replay)=$H2"
+          if [ "$H1" != "$H2" ]; then
+            echo "::error::determinism failed: metrics.csv differs on replay"
+            diff -u metrics/metrics.csv metrics_replay/metrics.csv || true
+            exit 4
+          fi
+          echo "DETERMINISM: OK"
+
+      - name: Gate (risk-aware thresholds)
+        run: |
+          python scripts/aggregate_gate.py \
+            --logs-dir papertrade/logs \
+            --output-dir metrics \
+            --lookback-days $LOOKBACK_DAYS \
+            --as-of $(date -u +%Y%m%d) \
+            --min-net 0 \
+            --min-win 0.45 \
+            --max-dd 0.20 \
+            --min-trades 30 \
+            --kill-switch
 
       - name: Generate Gate report (markdown)
         if: always()
         run: |
-          python scripts/metrics_report.py --csv metrics/metrics.csv \
-            --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30
+          python scripts/metrics_report.py \
+            --csv metrics/metrics.csv \
+            --gate-report metrics/gate_report.json \
+            --output-dir metrics
+
+      - name: Post job summary
+        if: always()
+        run: |
+          echo "## Gate Report" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f metrics/report.md ]; then
+            cat metrics/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**report.md missing**" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Prepare metrics artifact bundle
         if: always()
         run: |
+          set -e
           rm -rf metrics_artifact
           mkdir -p metrics_artifact/metrics
           cp metrics/metrics.csv metrics_artifact/metrics/
           cp metrics/report.md metrics_artifact/metrics/
+          if [ -f metrics/pass_rate.txt ]; then
+            cp metrics/pass_rate.txt metrics_artifact/metrics/
+          fi
+          if [ -f metrics/gate_report.json ]; then
+            cp metrics/gate_report.json metrics_artifact/metrics/
+          fi
+          if [ -f metrics/gate_report.md ]; then
+            cp metrics/gate_report.md metrics_artifact/metrics/
+          fi
+          if [ -f metrics/gate_report.csv ]; then
+            cp metrics/gate_report.csv metrics_artifact/metrics/
+          fi
+          if [ -f metrics_replay/metrics.csv ]; then
+            cp metrics_replay/metrics.csv metrics_artifact/metrics_replay.csv
+          fi
 
       - name: Upload metrics artifact
         if: always()
@@ -90,19 +152,57 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Extract pass rate
+        if: always()
+        id: passrate
+        run: |
+          set -e
+          RATE=""
+          if [ -f metrics/pass_rate.txt ]; then
+            RATE=$(cat metrics/pass_rate.txt)
+          elif grep -E "\*\*pass_rate" metrics/report.md > /dev/null 2>&1; then
+            RATE=$(grep -E "\*\*pass_rate" metrics/report.md | tail -n 1 | sed -E 's/.*= ([0-9.]+)%.*/\1/' )
+            RATE=$(awk "BEGIN {print $RATE/100}")
+          fi
+          if [ -n "$RATE" ]; then
+            printf 'rate=%.4f\n' "$RATE" >> "$GITHUB_OUTPUT"
+            PCT=$(awk "BEGIN {printf \"%.2f\", $RATE*100}")
+            echo "rate_pct=$PCT" >> "$GITHUB_OUTPUT"
+          else
+            echo "rate=" >> "$GITHUB_OUTPUT"
+            echo "rate_pct=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create failure issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PASS_RATE: ${{ steps.passrate.outputs.rate_pct }}
+        run: |
+          set -e
+          TITLE="[ci-backtest] Failure on run ${{ github.run_number }}"
+          BODY="Run: $RUN_URL\\nStatus: ${{ job.status }}"
+          if [ -n "$PASS_RATE" ]; then
+            BODY="$BODY\\nPass rate: ${PASS_RATE}%"
+          fi
+          gh issue create --repo "$REPO" --title "$TITLE" --body "$BODY" || echo "Issue creation skipped"
+
       - name: Notify Discord
         if: always()
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          STATUS: ${{ job.status }}
+          PASS_RATE: ${{ steps.passrate.outputs.rate_pct }}
         run: |
-          STATUS="${{ job.status }}"
           if [ -n "$WEBHOOK" ]; then
-            echo "Discord webhook configured; skipping notify in stub workflow (status=$STATUS)."
+            MSG="ci-backtest: ${STATUS}"
+            if [ -n "$PASS_RATE" ]; then
+              MSG="$MSG (pass_rate=${PASS_RATE}%)"
+            fi
+            curl -sS -X POST -H "Content-Type: application/json" \
+                 -d "{\"content\":\"${MSG}\"}" "$WEBHOOK" || true
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
-
-
-
-
-
