@@ -136,7 +136,7 @@ jobs:
         run: |
           python scripts/aggregate_gate.py --root metrics \
             --min_net 0 --min_win 0.45 --max_dd 0.20 --min_trades 30 \
-            --min_pass_rate 0.66
+            --min_pass_rate 1.0
 
       - name: Upload metrics artifact
         uses: actions/upload-artifact@v4
@@ -153,5 +153,6 @@ jobs:
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
 
 
