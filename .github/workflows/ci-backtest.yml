@@ -1,8 +1,9 @@
-name: ci-backtest
+﻿name: ci-backtest
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "30 2 * * *"   # UTC 02:30（JST 11:30）
+    - cron: "30 2 * * *"
+
 jobs:
   backtest_and_gate:
     runs-on: ubuntu-latest
@@ -71,3 +72,4 @@ jobs:
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
