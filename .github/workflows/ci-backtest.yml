@@ -198,9 +198,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack
-          path: |
-            metrics/metrics.csv
-            metrics/report.md
+          path: metrics/
           retention-days: 30
       - name: Notify Discord
         if: always()
