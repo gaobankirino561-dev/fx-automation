@@ -1,86 +1,61 @@
 name: done-append
 on:
-  pull_request:
-    types:
-      - closed
+  pull_request_target:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number to append from"
+        required: true
 permissions:
   contents: write
   pull-requests: write
-  actions: read
-  issues: read
 jobs:
   append:
-    if: github.event.pull_request.merged == true
+    if: ${{ github.event.pull_request.merged == true || inputs.pr != '' }}
     runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
     steps:
-      - name: Checkout base branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.base.ref }}
+      - uses: actions/checkout@v4
 
-      - name: Extract DONE entry
-        id: extract
+      - id: extract
         uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.pull_request.body || "";
-            const match = body.match(/\[DONE ENTRY\]([\s\S]*?)\[\/DONE ENTRY\]/);
-            if (!match) core.setFailed("DONE ENTRY ブロックがありません（記帳必須）");
-            const lines = match[1]
-              .split(/\r?\n/)
-              .map(line => line.trim())
-              .filter(Boolean);
-            const kv = {};
-            for (const line of lines) {
-              const idx = line.indexOf(":");
-              if (idx === -1) core.setFailed(`DONE ENTRY の行 '${line}' に ':' がありません`);
-              const key = line.slice(0, idx).trim().toLowerCase();
-              const value = line.slice(idx + 1).trim();
-              kv[key] = value;
-            }
-            for (const key of ["date", "owner", "artifact", "summary"]) {
-              if (!kv[key]) core.setFailed(`DONE ENTRY の '${key}' が未入力です`);
-            }
-            const monthMatch = kv.date.match(/^(\d{4}-\d{2})-/);
-            if (!monthMatch) core.setFailed("date は YYYY-MM-DD 形式で記入してください");
-            const esc = value => (value || "").replace(/\|/g, "／");
-            core.setOutput("mdLine", `- ${esc(kv.date)} JST | ${esc(kv.owner)} | ${esc(kv.artifact)} | ${esc(kv.summary)}`);
-            core.setOutput("month", monthMatch[1]);
-            core.setOutput("date", kv.date);
+            const pr = Number(process.env.PR_NUMBER);
+            const { data: pull } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo, pull_number: pr
+            });
+            const body = pull.body || "";
+            const m = body.match(/\[DONE ENTRY\]([\s\S]*?)\[\/DONE ENTRY\]/);
+            if (!m) core.setFailed("DONE ENTRY が見つかりません");
+            const lines = m[1].split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+            const kv = Object.fromEntries(lines.map(l=>{
+              const i=l.indexOf(':'); return [l.slice(0,i).trim(), l.slice(i+1).trim()];
+            }));
+            function esc(s){return (s||"").replace(/\|/g,"／")}
+            const mdLine = `- ${esc(kv.date)} JST | ${esc(kv.owner)} | ${esc(kv.artifact)} | ${esc(kv.summary)}`;
+            core.setOutput("mdLine", mdLine);
 
-      - name: Ensure docs/DONE.md and append entry
-        id: update
-        env:
-          MONTH: ${{ steps.extract.outputs.month }}
-          LINE: ${{ steps.extract.outputs.mdLine }}
+      - name: Ensure docs/DONE.md exists and append entry
         run: |
-          set -euo pipefail
           mkdir -p docs
           if [ ! -f docs/DONE.md ]; then
             cat > docs/DONE.md <<'EOF'
 # DONE (Completed Tasks Log)
 - Source of truth: このファイル / 対応PR / CIログ
+
+## 2025-10
 EOF
           fi
-          month_heading="## ${MONTH}"
-          if ! grep -q "^$month_heading" docs/DONE.md; then
-            printf '\n%s\n' "$month_heading" >> docs/DONE.md
-          fi
-          printf '%s\n' "$LINE" >> docs/DONE.md
-          if git diff --quiet -- docs/DONE.md; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+          echo "${{ steps.extract.outputs.mdLine }}" >> docs/DONE.md
 
-      - name: Create PR for ledger update
-        if: steps.update.outputs.changed == 'true'
+      - name: Create PR
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: bot/done-append-${{ github.event.pull_request.number }}
-          title: "Append DONE entry for #${{ github.event.pull_request.number }}"
-          commit-message: "chore(done): append DONE for #${{ github.event.pull_request.number }}"
-          body: "自動記帳: ${{ steps.extract.outputs.mdLine }}"
+          branch: bot/done-append-${{ env.PR_NUMBER }}
+          title: "Append DONE entry for #${{ env.PR_NUMBER }}"
+          commit-message: "chore(done): append DONE for #${{ env.PR_NUMBER }}"
+          body: "自動追記: ${{ steps.extract.outputs.mdLine }}"
           signoff: true
-          delete-branch: true
