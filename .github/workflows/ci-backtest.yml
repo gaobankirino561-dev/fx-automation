@@ -1,9 +1,5 @@
-permissions:
-  contents: read
-  actions: write
 
-name: ci-backtest
-on:
+  actions: writeon:
   workflow_call: {}
   repository_dispatch:
     types: [manual-backtest]
@@ -318,6 +314,7 @@ EOF
         run: |
           echo "Sidecar job triggered intentionally."
           exit 1
+
 
 
 
