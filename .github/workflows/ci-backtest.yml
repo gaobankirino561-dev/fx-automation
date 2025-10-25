@@ -1,4 +1,4 @@
-﻿name: ci-backtest
+name: ci-backtest
 on:
   workflow_call: {}
   repository_dispatch:
@@ -220,17 +220,32 @@ EOF
           [ -f metrics/metrics.csv ] && head -n 5 metrics/metrics.csv || true
           [ -f metrics/report.md ] && head -n 20 metrics/report.md || true
           [ -f metrics-pack.tgz ] && echo "tgz size:" && wc -c metrics-pack.tgz || true
-
+\n      - name: Workspace snapshot\n        if: always()\n        run: |\n          set -e\n          echo '== workspace snapshot =='\n          pwd; ls -la\n          du -sh * || true\n
       - name: Upload metrics artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: metrics-pack-${{ github.run_id }}
+          name: metrics-pack-${{ github.run_id }}\n          path: |\n            metrics/**\n            metrics-pack.tgz\n          if-no-files-found: warn
           path: |
             metrics/**
             metrics-pack.tgz
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Fallback upload (workspace snapshot)
+        if: always()
+        run: |
+          set -e
+          tar -czf workspace.tgz .
+
+      - name: Upload fallback artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-${{ github.run_id }}\n          if-no-files-found: warn
+          path: workspace.tgz
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Extract pass rate
         if: always()
@@ -289,6 +304,18 @@ EOF
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
+  sidecar_fail:
+    needs: backtest_and_gate
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Force failure (temporary sidecar)
+        run: |
+          echo "Sidecar job triggered intentionally."
+          exit 1
+
+
 
 
 
