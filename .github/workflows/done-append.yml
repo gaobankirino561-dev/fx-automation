@@ -1,20 +1,25 @@
 name: done-append
 on:
   pull_request:
-    types: [closed]
+    types:
+      - closed
 permissions:
   contents: write
   pull-requests: write
+  actions: read
+  issues: read
 jobs:
   append:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout base branch
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
-      - id: extract
+      - name: Extract DONE entry
+        id: extract
         uses: actions/github-script@v7
         with:
           script: |
@@ -23,7 +28,7 @@ jobs:
             if (!match) core.setFailed("DONE ENTRY ブロックがありません（記帳必須）");
             const lines = match[1]
               .split(/\r?\n/)
-              .map((line) => line.trim())
+              .map(line => line.trim())
               .filter(Boolean);
             const kv = {};
             for (const line of lines) {
@@ -33,18 +38,21 @@ jobs:
               const value = line.slice(idx + 1).trim();
               kv[key] = value;
             }
-            const required = ["date", "owner", "artifact", "summary"];
-            for (const key of required) {
+            for (const key of ["date", "owner", "artifact", "summary"]) {
               if (!kv[key]) core.setFailed(`DONE ENTRY の '${key}' が未入力です`);
             }
-            const esc = (value) => (value || "").replace(/\|/g, "／");
-            core.setOutput(
-              "mdLine",
-              `- ${esc(kv.date)} JST | ${esc(kv.owner)} | ${esc(kv.artifact)} | ${esc(kv.summary)}`
-            );
+            const monthMatch = kv.date.match(/^(\d{4}-\d{2})-/);
+            if (!monthMatch) core.setFailed("date は YYYY-MM-DD 形式で記入してください");
+            const esc = value => (value || "").replace(/\|/g, "／");
+            core.setOutput("mdLine", `- ${esc(kv.date)} JST | ${esc(kv.owner)} | ${esc(kv.artifact)} | ${esc(kv.summary)}`);
+            core.setOutput("month", monthMatch[1]);
+            core.setOutput("date", kv.date);
 
-      - name: Ensure docs/DONE.md exists and append entry
+      - name: Ensure docs/DONE.md and append entry
         id: update
+        env:
+          MONTH: ${{ steps.extract.outputs.month }}
+          LINE: ${{ steps.extract.outputs.mdLine }}
         run: |
           set -euo pipefail
           mkdir -p docs
@@ -52,14 +60,13 @@ jobs:
             cat > docs/DONE.md <<'EOF'
 # DONE (Completed Tasks Log)
 - Source of truth: このファイル / 対応PR / CIログ
-
-## 2025-10
 EOF
           fi
-          if ! grep -q "^## 2025-10" docs/DONE.md; then
-            printf "## 2025-10\n" | cat - docs/DONE.md > docs/DONE.md.new && mv docs/DONE.md.new docs/DONE.md
+          month_heading="## ${MONTH}"
+          if ! grep -q "^$month_heading" docs/DONE.md; then
+            printf '\n%s\n' "$month_heading" >> docs/DONE.md
           fi
-          printf "%s\n" "${{ steps.extract.outputs.mdLine }}" >> docs/DONE.md
+          printf '%s\n' "$LINE" >> docs/DONE.md
           if git diff --quiet -- docs/DONE.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -70,8 +77,10 @@ EOF
         if: steps.update.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: bot/done-append-${{ github.event.pull_request.number }}
           title: "Append DONE entry for #${{ github.event.pull_request.number }}"
           commit-message: "chore(done): append DONE for #${{ github.event.pull_request.number }}"
-          body: "自動追記: ${{ steps.extract.outputs.mdLine }}"
+          body: "自動記帳: ${{ steps.extract.outputs.mdLine }}"
           signoff: true
+          delete-branch: true
