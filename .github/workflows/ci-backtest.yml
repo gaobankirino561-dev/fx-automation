@@ -226,7 +226,9 @@ EOF
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack-${{ github.run_id }}
-          path: metrics_artifact/
+          path: |
+            metrics/**
+            metrics-pack.tgz
           if-no-files-found: warn
           retention-days: 30
 
@@ -287,6 +289,7 @@ EOF
           else
             echo "DISCORD_WEBHOOK not set; skip notify."
           fi
+
 
 
 
