@@ -131,7 +131,7 @@ EOF
           fi
 
       - name: Generate Gate report (markdown)
-        if: always
+      if: always()
         run: |
           python scripts/metrics_report.py \
             --metrics-csv metrics/metrics.csv \
@@ -141,7 +141,7 @@ EOF
             --json-name report.json
 
       - name: Post job summary
-        if: always
+      if: always()
         run: |
           echo "## Gate Report" >> "$GITHUB_STEP_SUMMARY"
           if [ -f metrics/report.md ]; then
@@ -151,7 +151,7 @@ EOF
           fi
 
       - name: Open or update Gate failure issue
-        if: always
+      if: always()
         uses: actions/github-script@v7
         with:
           script: |
@@ -178,7 +178,7 @@ EOF
             }
 
       - name: Prepare metrics artifact bundle
-        if: always
+      if: always()
         run: |
           set -e
           rm -rf metrics_artifact
@@ -202,7 +202,7 @@ EOF
           fi
 
             - name: Always archive metrics dir
-        if: always
+      if: always()
         run: |
           set -e
           mkdir -p metrics
@@ -213,7 +213,7 @@ EOF
           tar -czf metrics-pack.tgz metrics || true
 
             - name: Debug list before upload
-        if: always
+      if: always()
         run: |
           set -e
           echo "== workspace =="
@@ -226,7 +226,7 @@ EOF
           [ -f metrics-pack.tgz ] && echo "tgz size:" && wc -c metrics-pack.tgz || true
 \n      - name: Workspace snapshot\n        if: always        run: |\n          set -e\n          echo '== workspace snapshot =='\n          pwd; ls -la\n          du -sh * || true\n
       - name: Upload metrics artifact
-        if: always
+      if: always()
         uses: actions/upload-artifact@v4
         with:
           name: metrics-pack-${{ github.run_id }}\n          path: |\n            metrics/**\n            metrics-pack.tgz\n          if-no-files-found: warn
@@ -237,13 +237,13 @@ EOF
           retention-days: 30
 
       - name: Fallback upload (workspace snapshot)
-        if: always
+      if: always()
         run: |
           set -e
           tar -czf workspace.tgz .
 
       - name: Upload fallback artifact
-        if: always
+      if: always()
         uses: actions/upload-artifact@v4
         with:
           name: workspace-${{ github.run_id }}\n          if-no-files-found: warn
@@ -252,7 +252,7 @@ EOF
           retention-days: 7
 
       - name: Extract pass rate
-        if: always
+      if: always()
         id: passrate
         run: |
           set -e
@@ -273,7 +273,7 @@ EOF
           fi
 
       - name: Create failure issue
-        if: always
+      if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -289,7 +289,7 @@ EOF
           gh issue create --repo "$REPO" --title "$TITLE" --body "$BODY" || echo "Issue creation skipped"
 
       - name: Notify Discord
-        if: always
+      if: always()
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           STATUS: ${{ job.status }}
@@ -312,12 +312,13 @@ EOF
   sidecar_fail:
     needs: backtest_and_gate
     runs-on: ubuntu-latest
-    if: always
+      if: always()
     steps:
       - name: Force failure (temporary sidecar)
         run: |
           echo "Sidecar job triggered intentionally."
           exit 1
+
 
 
 
