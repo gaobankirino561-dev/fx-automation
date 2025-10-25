@@ -12,7 +12,10 @@ permissions:
 
 jobs:
   backtest_and_gate:
-    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       LOOKBACK_DAYS: "60"
@@ -225,7 +228,15 @@ EOF
           [ -f metrics/report.md ] && head -n 20 metrics/report.md || true
           [ -f metrics-pack.tgz ] && echo "tgz size:" && wc -c metrics-pack.tgz || true
 \n      - name: Workspace snapshot\n        if: always        run: |\n          set -e\n          echo '== workspace snapshot =='\n          pwd; ls -la\n          du -sh * || true\n
-      - name: Upload metrics artifact
+            - name: Upload smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ github.run_id }}
+          path: sentinel.ok
+          if-no-files-found: warn
+          retention-days: 1
+
       if: always()
         
 
@@ -330,5 +341,6 @@ EOF
         run: |
           echo "Sentinel forcing failure"
           exit 1
+
 
 
