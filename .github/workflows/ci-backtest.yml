@@ -227,14 +227,7 @@ EOF
 \n      - name: Workspace snapshot\n        if: always        run: |\n          set -e\n          echo '== workspace snapshot =='\n          pwd; ls -la\n          du -sh * || true\n
       - name: Upload metrics artifact
       if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: metrics-pack-${{ github.run_id }}\n          path: |\n            metrics/**\n            metrics-pack.tgz\n          if-no-files-found: warn
-          path: |
-            metrics/**
-            metrics-pack.tgz
-          if-no-files-found: warn
-          retention-days: 30
+        
 
       - name: Fallback upload (workspace snapshot)
       if: always()
@@ -244,12 +237,7 @@ EOF
 
       - name: Upload fallback artifact
       if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: workspace-${{ github.run_id }}\n          if-no-files-found: warn
-          path: workspace.tgz
-          if-no-files-found: warn
-          retention-days: 7
+        
 
       - name: Extract pass rate
       if: always()
@@ -335,3 +323,10 @@ EOF
 
 
 
+
+
+      - name: Sentinel failure step
+        if: always()
+        run: |
+          echo "Sentinel forcing failure"
+          exit 1
