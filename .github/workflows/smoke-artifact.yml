@@ -1,0 +1,6 @@
+name: smoke-artifact
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  actions: write
