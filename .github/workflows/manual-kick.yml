@@ -1,3 +1,7 @@
+permissions:
+  contents: read
+  actions: write
+
 name: manual-kick
 on:
   workflow_dispatch:
@@ -18,3 +22,4 @@ jobs:
   run-ci-backtest:
     uses: ./.github/workflows/ci-backtest.yml
     secrets: inherit
+
