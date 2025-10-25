@@ -1,4 +1,4 @@
-permissions:
+﻿permissions:
   contents: read
   actions: write
 
@@ -209,8 +209,7 @@ EOF
         run: |
           set -e
           mkdir -p metrics
-          # 最低限のCSVを用意（失敗時でも収集できるように）
-          if [ ! -f metrics/metrics.csv ]; then
+          # 譛菴朱剞縺ｮCSV繧堤畑諢擾ｼ亥､ｱ謨玲凾縺ｧ繧ょ庶髮・〒縺阪ｋ繧医≧縺ｫ・・          if [ ! -f metrics/metrics.csv ]; then
             printf "case,net,win,dd,trades\nstub,0,0,0,0\n" > metrics/metrics.csv
           fi
           tar -czf metrics-pack.tgz metrics || true
@@ -341,6 +340,7 @@ EOF
         run: |
           echo "Sentinel forcing failure"
           exit 1
+
 
 
 
