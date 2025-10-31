@@ -1,0 +1,23 @@
+name: papertrade-smoke
+on:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: papertrade-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Install minimal deps
+        run: pip install -r requirements/papertrade.txt
+      - name: Run smoke
+        run: python scripts/papertrade_smoke.py
+      - name: Assert deterministic metrics
+        run: python scripts/assert_metrics.py artifacts/papertrade_smoke/metrics.csv metrics/baseline_paper_smoke.csv
