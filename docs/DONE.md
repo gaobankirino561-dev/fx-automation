@@ -24,3 +24,5 @@
 
 YYYY-MM-DD JST | owner=@あなた | artifact=phaseC-smoke | summary=papertrade統合(guards+CI)スモーク雛形 | metrics=net=1200, win=55.0, dd=12.5, trades=40
 2025-11-03 JST | owner=@あなた | artifact=phaseC-demo | summary=papertradeデモをCIゲート化(決定論ベースライン固定) | metrics=net=1234, win=50, dd=10, trades=2
+2025-11-03 JST | owner=@あなた | artifact=phaseC-integration-gate | summary=統合スモークをbaseline+thresholdでPRゲート化 | metrics=net=, win=, dd=, trades=
+2025-11-03 JST | owner=@あなた | artifact=phaseC-integration-gate | summary=統合スモークをbaseline+thresholdでPRゲート化 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0

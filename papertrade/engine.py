@@ -33,14 +33,36 @@ class Guard:
 
 
 class Engine:
-    def __init__(self, pair: str, lot: float, pip: float = 0.01, spread_pips: float = 0.2, slip_pips: float = 0.1, guard: Optional[Guard] = None) -> None:
-        self.pair = pair
-        self.lot = lot
-        self.pip = pip
-        self.spread_pips = spread_pips
-        self.slip_pips = slip_pips
-        self.guard = guard or Guard(per_trade_risk_jpy=1000.0)
+    # conf(dict) でも通常の引数でも初期化できる __init__
+    def __init__(
+        self,
+        conf: Optional[dict] = None,
+        pair: Optional[str] = None,
+        lot: Optional[float] = None,
+        pip: float = 0.01,
+        spread_pips: float = 0.2,
+        slip_pips: float = 0.1,
+        guard: Optional[Guard] = None,
+    ) -> None:
+        if isinstance(conf, dict) and pair is None:
+            self.pair = conf.get("pair", "USDJPY")
+            self.lot = float(conf.get("lot", 0.1))
+            self.pip = pip
+            self.spread_pips = float(conf.get("spread_pips", 0.2))
+            self.slip_pips = float(conf.get("slippage_pips", 0.1))
+            rg = conf.get("risk_guard", {}) or {}
+            self.guard = guard or Guard(per_trade_risk_jpy=float(rg.get("per_trade_risk_jpy", 1000.0)))
+        else:
+            self.pair = pair or "USDJPY"
+            self.lot = float(lot if lot is not None else 0.1)
+            self.pip = pip
+            self.spread_pips = spread_pips
+            self.slip_pips = slip_pips
+            self.guard = guard or Guard(per_trade_risk_jpy=1000.0)
         self.open_pos: Optional[Position] = None
+        self.trades = []
+        self._equity = 0.0
+        self._peak = 0.0
 
     def _pip_value_jpy(self) -> float:
         if self.pair.upper().endswith("JPY"):
@@ -60,6 +82,7 @@ class Engine:
             notify("entry_blocked", {"pair": self.pair, "side": side, "price": "-", "pnl_jpy": "-", "reason": gmsg})
             return False, gmsg
 
+        # 1トレード許容損失チェック
         per_pip_jpy = self._pip_value_jpy()
         est_loss = max(0.0, sl_pips) * per_pip_jpy
         if est_loss > self.guard.per_trade_risk_jpy + 1e-9:
@@ -73,3 +96,47 @@ class Engine:
         self.open_pos = Position(side=side, entry_price=price, lot=self.lot, tp=tp, sl=sl, open_bar_idx=bar_idx, reason=reason)
         notify("entry", {"pair": self.pair, "side": side, "price": round(price, 3), "pnl_jpy": 0, "reason": reason})
         return True, "entered"
+
+    def on_bar(self, i: int, o: float, h: float, l: float, c: float):
+        if self.open_pos is None:
+            return
+        side = self.open_pos.side
+        tp = self.open_pos.tp
+        sl = self.open_pos.sl
+        hit = None
+        if side == "BUY":
+            if l <= sl:
+                hit = ("SL", sl)
+            elif h >= tp:
+                hit = ("TP", tp)
+        else:
+            if h >= sl:
+                hit = ("SL", sl)
+            elif l <= tp:
+                hit = ("TP", tp)
+        if hit:
+            kind, px = hit
+            per_pip = self._pip_value_jpy()
+            move_pips = (px - self.open_pos.entry_price) / self.pip * (1 if side == "BUY" else -1)
+            pnl = move_pips * per_pip
+            self._equity += pnl
+            self._peak = max(self._peak, self._equity)
+            self.trades.append({"result": kind, "pnl": pnl})
+            self.open_pos = None
+
+    def finalize(self):
+        return
+
+    def metrics(self):
+        eq = self._equity
+        peak = self._peak
+        wins = sum(1 for t in self.trades if t["result"] == "TP")
+        total = len(self.trades)
+        win_rate = (wins / total * 100.0) if total else 0.0
+        dd = ((peak - eq) / (peak if peak > 0 else 1.0) * 100.0) if peak else 0.0
+        return {
+            "net_jpy": round(eq, 6),
+            "win_rate_pct": round(win_rate, 6),
+            "max_drawdown_pct": round(dd, 6),
+            "trades": float(total),
+        }

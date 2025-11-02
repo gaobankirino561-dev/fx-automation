@@ -11,3 +11,6 @@
 - CI: add papertrade-demo (deterministic run + baseline gate). Baseline pinned from local deterministic seed=1729.
 - Engine: enforce per-trade loss cap via SL width check (reject entry if over limit).
 - Artifacts: artifacts/papertrade_demo/{trades.csv,metrics.csv} uploaded by CI.
+## Integration Gate
+- Baseline: metrics/baseline_papertrade_integration.csv と一致（決定論 seed=1729）
+- Thresholds: net>0, win≥45, DD≤20, trades≥4 を scripts/assert_thresholds.py で検証

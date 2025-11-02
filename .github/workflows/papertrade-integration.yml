@@ -1,0 +1,29 @@
+name: papertrade-integration
+on:
+  pull_request:
+permissions: { contents: read }
+concurrency:
+  group: papertrade-integration-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install deps
+        run: pip install -q PyYAML
+      - name: Run integration (--dry)
+        run: python scripts/papertrade_integration.py --dry
+      - name: Assert baseline match
+        run: python scripts/assert_metrics.py artifacts/papertrade_integration/metrics.csv metrics/baseline_papertrade_integration.csv
+      - name: Assert thresholds
+        run: python scripts/assert_thresholds.py artifacts/papertrade_integration/metrics.csv "net_jpy>0,win_rate_pct>=45,max_drawdown_pct<=20,trades>=4"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: papertrade-integration
+          path: artifacts/papertrade_integration/**
