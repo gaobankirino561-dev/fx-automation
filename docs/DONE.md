@@ -23,3 +23,4 @@
 - 2025-06-16 JST | @gaobankirino561-dev | Discord | 通知Webhookを設定（エントリー決済等の報告チャネルを確立）
 
 YYYY-MM-DD JST | owner=@あなた | artifact=phaseC-smoke | summary=papertrade統合(guards+CI)スモーク雛形 | metrics=net=1200, win=55.0, dd=12.5, trades=40
+2025-11-03 JST | owner=@あなた | artifact=phaseC-demo | summary=papertradeデモをCIゲート化(決定論ベースライン固定) | metrics=net=1234, win=50, dd=10, trades=2
