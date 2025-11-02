@@ -27,6 +27,19 @@ def decide_with_gpt(context: Dict) -> Decision:
         side = str(obj.get("side", "NONE")).upper()
         if side not in ("BUY", "SELL", "NONE"):
             side = "NONE"
-        return Decision(side, float(obj.get("tp_pips", 0)), float(obj.get("sl_pips", 0)), str(obj.get("reason", "gpt")))
+        dec = Decision(side, float(obj.get("tp_pips", 0)), float(obj.get("sl_pips", 0)), str(obj.get("reason", "gpt")))
+        try:
+            p=os.getenv("DECISIONS_JSONL")
+            if p:
+                with open(p, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "side": dec.side,
+                        "tp_pips": dec.tp_pips,
+                        "sl_pips": dec.sl_pips,
+                        "reason": dec.reason,
+                    }) + "\n")
+        except Exception:
+            pass
+        return dec
     except Exception:
         return Decision.none("gpt_parse_error")

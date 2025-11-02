@@ -6,6 +6,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from scripts.make_synth_series import gen_synth_bars
 from papertrade.engine import Engine
 from trading.signal_gpt import decide_with_gpt
+from notifiers.notify import notify
 
 def run_sim(conf_path, mode, outdir):
     with open(conf_path,"r",encoding="utf-8") as f: conf=yaml.safe_load(f)
@@ -26,14 +27,19 @@ def run_sim(conf_path, mode, outdir):
         eng.on_bar(i,o,h,l,c)
     eng.finalize()
 
-    # trades.csv（runner が期待する列構成）
+    # trades.csv
     with open(os.path.join(outdir,"trades.csv"),"w",newline="",encoding="utf-8") as f:
         w=csv.writer(f); w.writerow(["side","entry","exit","pnl_jpy","reason"])
         for t in getattr(eng,'trades',[]):
             w.writerow([t.get("side"),t.get("entry"),t.get("exit"),round(t.get("pnl_jpy",0.0),1),t.get("reason")])
 
-    # metrics.csv
+    # metrics.csv + notify summary
     m = eng.metrics()
+    try:
+        notify("run_summary", {"pair":eng.pair,"side":"-","price":"-","pnl_jpy":m.get("net_jpy",0),
+               "reason":f"net={m.get('net_jpy',0)}, win={m.get('win_rate_pct',0)}%, dd={m.get('max_drawdown_pct',0)}%, trades={m.get('trades',0)}"})
+    except Exception:
+        pass
     with open(os.path.join(outdir,"metrics.csv"),"w",newline="",encoding="utf-8") as f:
         w=csv.writer(f); w.writerow(["metric","value"]); [w.writerow([k,v]) for k,v in m.items()]
     print("DONE metrics:", m)

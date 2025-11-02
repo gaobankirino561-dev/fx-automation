@@ -14,3 +14,7 @@
 ## Integration Gate
 - Baseline: metrics/baseline_papertrade_integration.csv と一致（決定論 seed=1729）
 - Thresholds: net>0, win≥45, DD≤20, trades≥4 を scripts/assert_thresholds.py で検証
+## Autobot Gate (improved)
+- Thresholds are centralized in ci/thresholds.yaml.
+- PR gate uses deterministic --dry, baseline match + YAML thresholds.
+- Manual GPT lane: workflow_dispatch, artifacts & step summary, soft thresholds.
