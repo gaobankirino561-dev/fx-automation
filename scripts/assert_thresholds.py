@@ -16,8 +16,7 @@ def check_thresholds(metrics, expr):
     for token in [t.strip() for t in expr.split(",") if t.strip()]:
         for sym in (">=", "<=", ">", "<", "=="):
             if sym in token:
-                k, val = token.split(sym,1)
-                k=k.strip(); val=float(val.strip())
+                k,val = token.split(sym,1); k=k.strip(); val=float(val.strip())
                 if k not in metrics or not OPS[sym](metrics[k], val):
                     fails.append(f"{k}:{metrics.get(k,'?')} {sym} {val}")
                 break

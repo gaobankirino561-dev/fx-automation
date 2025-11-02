@@ -33,7 +33,6 @@ class Guard:
 
 
 class Engine:
-    # conf(dict) でも通常の引数でも初期化できる __init__
     def __init__(
         self,
         conf: Optional[dict] = None,
@@ -60,7 +59,7 @@ class Engine:
             self.slip_pips = slip_pips
             self.guard = guard or Guard(per_trade_risk_jpy=1000.0)
         self.open_pos: Optional[Position] = None
-        self.trades = []
+        self.trades = []  # list of dicts
         self._equity = 0.0
         self._peak = 0.0
 
@@ -121,7 +120,14 @@ class Engine:
             pnl = move_pips * per_pip
             self._equity += pnl
             self._peak = max(self._peak, self._equity)
-            self.trades.append({"result": kind, "pnl": pnl})
+            self.trades.append({
+                "result": kind,
+                "pnl_jpy": pnl,
+                "side": side,
+                "entry": self.open_pos.entry_price,
+                "exit": px,
+                "reason": self.open_pos.reason,
+            })
             self.open_pos = None
 
     def finalize(self):
