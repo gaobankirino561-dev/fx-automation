@@ -20,7 +20,8 @@ def ensure_trades(p):
         w.writeheader()
 
 def ensure_decisions(p):
-    open(p, "w", encoding="utf-8").close()
+    with open(p, "w", encoding="utf-8") as f:
+        f.write("\n")
 
 def write_summary(lines):
     text = "\n".join(lines) + "\n"
