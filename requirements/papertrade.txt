@@ -1,3 +1,4 @@
 pandas
 numpy
 requests
+PyYAML>=6.0

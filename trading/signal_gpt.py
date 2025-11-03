@@ -1,58 +1,24 @@
-import json, os
-from datetime import datetime, timezone
-from typing import Dict
-from trading.decision import Decision
-try:
-    from openai import OpenAI  # type: ignore
-except Exception:
-    OpenAI = None  # type: ignore
+﻿from __future__ import annotations
+import os, json
+from openai import OpenAI
 
-GPT_MAX_CALLS = int(os.getenv("GPT_MAX_CALLS", "3"))
-GPT_MAX_TOKENS = int(os.getenv("GPT_MAX_TOKENS", "300"))
-_gpt_call_count = 0
-
-
-def decide_with_gpt(context: Dict) -> Decision:
-    if not OpenAI or not os.getenv("OPENAI_API_KEY"):
-        return Decision.none("no_api_key")
-    global _gpt_call_count
-    if _gpt_call_count >= GPT_MAX_CALLS:
-        return Decision.none("max_calls")
-    _gpt_call_count += 1
-    client = OpenAI()
-    resp = client.chat.completions.create(
-        model="gpt-4o", temperature=0,
-        messages=[
-            {"role": "system", "content": "You are a trading decision assistant. Respond ONLY as compact JSON."},
-            {"role": "user", "content": (
-                "Return JSON: {side:(BUY|SELL|NONE), tp_pips:number, sl_pips:number, reason:string}. "
-                "If no clear edge → side=NONE. Keep risk small."
-            )},
-        ],
-        response_format={"type": "json_object"},
-        max_tokens=GPT_MAX_TOKENS,
-    )
+def judge(prompt: str, model: str="gpt-4o", max_tokens: int=300) -> dict:
+    if not os.getenv("OPENAI_API_KEY",""):
+        return {"decision":"NO_ENTRY","reason":"no OPENAI_API_KEY"}
     try:
-        obj = json.loads(resp.choices[0].message.content)
-        side = str(obj.get("side", "NONE")).upper()
-        if side not in ("BUY", "SELL", "NONE"):
-            side = "NONE"
-        dec = Decision(side, float(obj.get("tp_pips", 0)), float(obj.get("sl_pips", 0)), str(obj.get("reason", "gpt")))
+        client = OpenAI()
+        msgs=[
+            {"role":"system","content":"Reply ONLY JSON like {\"decision\":\"BUY|SELL|NO_ENTRY\",\"reason\":\"...\"}"},
+            {"role":"user","content":prompt}
+        ]
+        out = client.chat.completions.create(model=model, messages=msgs, max_tokens=max_tokens, temperature=0)
+        txt = out.choices[0].message.content.strip()
         try:
-            p=os.getenv("DECISIONS_JSONL")
-            if p:
-                with open(p, "a", encoding="utf-8") as f:
-                    rec = {
-                        "ts_utc": datetime.now(timezone.utc).isoformat(),
-                        "side": dec.side,
-                        "tp_pips": dec.tp_pips,
-                        "sl_pips": dec.sl_pips,
-                        "reason": dec.reason,
-                        "flags": {"no_api_key": (dec.reason == "no_api_key")},
-                    }
-                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            obj = json.loads(txt)
         except Exception:
-            pass
-        return dec
-    except Exception:
-        return Decision.none("gpt_parse_error")
+            obj = {"decision":"NO_ENTRY","reason":txt[:200]}
+        if obj.get("decision") not in ("BUY","SELL","NO_ENTRY"):
+            obj["decision"]="NO_ENTRY"
+        return obj
+    except Exception as e:
+        return {"decision":"NO_ENTRY","reason":f"gpt error: {type(e).__name__}"}
