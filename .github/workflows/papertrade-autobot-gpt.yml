@@ -1,0 +1,46 @@
+name: papertrade-autobot-gpt
+on:
+  workflow_dispatch:
+    inputs:
+      thresholds_key:
+        description: "ci/thresholds.yaml のキー（例: autobot_run）。空ならソフト評価もスキップ"
+        required: false
+        default: "autobot_run"
+permissions: { contents: read }
+concurrency:
+  group: papertrade-autobot-gpt-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  autobot-gpt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install deps
+        run: |
+          pip install -q PyYAML
+          pip install -q "openai>=1.10,<2"
+      - name: Run GPT mode
+        run: python runner/autobot_paper.py --mode gpt --config papertrade/config.yaml --outdir artifacts/papertrade_gpt_run
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: papertrade-gpt-run
+          path: artifacts/papertrade_gpt_run/**
+          retention-days: 7
+      - name: Soft thresholds (never fail PR)
+        continue-on-error: true
+        run: |
+          if [ -n "${{ github.event.inputs.thresholds_key }}" ]; then \
+             python scripts/assert_thresholds.py artifacts/papertrade_gpt_run/metrics.csv "${{ github.event.inputs.thresholds_key }}"; \
+          else echo "skip thresholds"; fi
+      - name: Step summary
+        run: python scripts/mk_summary.py artifacts/papertrade_gpt_run/metrics.csv "GPT Paper Run" >> "$GITHUB_STEP_SUMMARY"

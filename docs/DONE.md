@@ -22,3 +22,10 @@
 - 2025-06-16 JST | @gaobankirino561-dev | env/mt5 | Python + MT5 の環境構築を完了（以後の進行を一任）
 - 2025-06-16 JST | @gaobankirino561-dev | Discord | 通知Webhookを設定（エントリー決済等の報告チャネルを確立）
 
+YYYY-MM-DD JST | owner=@あなた | artifact=phaseC-smoke | summary=papertrade統合(guards+CI)スモーク雛形 | metrics=net=1200, win=55.0, dd=12.5, trades=40
+2025-11-03 JST | owner=@あなた | artifact=phaseC-demo | summary=papertradeデモをCIゲート化(決定論ベースライン固定) | metrics=net=1234, win=50, dd=10, trades=2
+2025-11-03 JST | owner=@あなた | artifact=phaseC-integration-gate | summary=統合スモークをbaseline+thresholdでPRゲート化 | metrics=net=, win=, dd=, trades=
+2025-11-03 JST | owner=@あなた | artifact=phaseC-integration-gate | summary=統合スモークをbaseline+thresholdでPRゲート化 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0
+2025-11-03 JST | owner=@あなた | artifact=phaseC-autobot-improved | summary=PRゲート(決定論)のYAMLしきい値化＋GPT手動レーン整備 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0
+2025-11-03 JST | owner=@あなた | artifact=phaseC-health-gate | summary=Gate健全性の原因分類と観測性強化(decisions.jsonl/summary) | metrics=n/a
+2025-11-03 JST | owner=@あなた | artifact=phaseC-gate-verified | summary=PRゲート(autobot)のOK/FAILを実地確認、GPT手動レーンを実行 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0

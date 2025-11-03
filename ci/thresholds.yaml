@@ -1,0 +1,3 @@
+autobot_run: "net_jpy>0,win_rate_pct>=45,max_drawdown_pct<=20,trades>=4"
+integration: "net_jpy>0,win_rate_pct>=45,max_drawdown_pct<=20,trades>=4"
+demo:        "net_jpy>0,win_rate_pct>=45,max_drawdown_pct<=20,trades>=4"
