@@ -1,4 +1,10 @@
-﻿import os, csv, json, math, pathlib, datetime as dt, traceback, re
+﻿# --- sys.path bootstrap for local packages (trading/*) ---
+import sys, pathlib
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+# ----------------------------------------------------------
+import os, csv, json, math, pathlib, datetime as dt, traceback, re
 from typing import Any
 import yaml
 
@@ -157,4 +163,5 @@ if __name__ == "__main__":
         with open(DECISIONS,"a",encoding="utf-8") as f:
             f.write(json.dumps({"ts":dt.datetime.utcnow().isoformat()+"Z","error":type(e).__name__,"msg":str(e)[:200]})+"\n")
         raise
+
 
