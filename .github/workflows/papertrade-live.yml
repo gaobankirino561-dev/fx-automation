@@ -1,0 +1,43 @@
+name: papertrade-live
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "dry-run (true/false)"
+        default: "true"
+        required: true
+concurrency:
+  group: papertrade-live
+  cancel-in-progress: true
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      GPT_MAX_CALLS: ${{ vars.GPT_MAX_CALLS || 3 }}
+      GPT_MAX_TOKENS: ${{ vars.GPT_MAX_TOKENS || 300 }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+      PAPERTRADE_HALT: ${{ vars.PAPERTRADE_HALT || 'false' }}
+      DRY: ${{ github.event.inputs.dry || 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install deps (best-effort)
+        run: |
+          if [ -f requirements/papertrade.txt ]; then
+            pip install -r requirements/papertrade.txt
+          else
+            echo "no requirements/papertrade.txt (ok in boot)"
+          fi
+      - name: Run live (boot)
+        run: python runner/autobot_paper_live.py
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: papertrade-live
+          path: artifacts/papertrade_live/**
+          if-no-files-found: warn
