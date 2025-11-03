@@ -1,4 +1,45 @@
 ﻿# --- sys.path bootstrap for local packages (trading/*) ---
+import sys, pathlib, importlib.util
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+# ----------------------------------------------------------
+
+def _resolve_signal_gpt():
+    """
+    1) 通常 import
+    2) 直接ファイル読込（衝突/パス問題対策）
+    3) 最終モック（BUY固定）— KILLテスト用
+    """
+    # 1) 標準 import（trading パッケージ）
+    try:
+        from trading import signal_gpt as _m
+        return _m
+    except Exception as _e1:
+        err1 = _e1
+
+    # 2) 直読み（repo/trading/signal_gpt.py を直接ロード）
+    try:
+        p = REPO_ROOT / "trading" / "signal_gpt.py"
+        if p.exists():
+            spec = importlib.util.spec_from_file_location("signal_gpt_local", str(p))
+            mod  = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)  # type: ignore
+            return mod
+    except Exception as _e2:
+        err2 = _e2
+
+    # 3) 最終モック：必ず BUY を返す（KILL動作検証のため）
+    class _Mock:
+        @staticmethod
+        def judge(prompt:str, model:str="gpt-4o", max_tokens:int=300):
+            return {"decision":"BUY",
+                    "reason":f"embedded mock (import error: {type(err1).__name__ if 'err1' in locals() else ''}/{type(err2).__name__ if 'err2' in locals() else ''})"}
+    return _Mock
+
+# 以降のコードからは `signal_gpt.judge(...)` をそのまま使えるように束ねる
+signal_gpt = _resolve_signal_gpt()
+# --- sys.path bootstrap for local packages (trading/*) ---
 import sys, pathlib
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -163,5 +204,6 @@ if __name__ == "__main__":
         with open(DECISIONS,"a",encoding="utf-8") as f:
             f.write(json.dumps({"ts":dt.datetime.utcnow().isoformat()+"Z","error":type(e).__name__,"msg":str(e)[:200]})+"\n")
         raise
+
 
 
