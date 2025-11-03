@@ -7,10 +7,18 @@ try:
 except Exception:
     OpenAI = None  # type: ignore
 
+GPT_MAX_CALLS = int(os.getenv("GPT_MAX_CALLS", "3"))
+GPT_MAX_TOKENS = int(os.getenv("GPT_MAX_TOKENS", "300"))
+_gpt_call_count = 0
+
 
 def decide_with_gpt(context: Dict) -> Decision:
     if not OpenAI or not os.getenv("OPENAI_API_KEY"):
         return Decision.none("no_api_key")
+    global _gpt_call_count
+    if _gpt_call_count >= GPT_MAX_CALLS:
+        return Decision.none("max_calls")
+    _gpt_call_count += 1
     client = OpenAI()
     resp = client.chat.completions.create(
         model="gpt-4o", temperature=0,
@@ -22,6 +30,7 @@ def decide_with_gpt(context: Dict) -> Decision:
             )},
         ],
         response_format={"type": "json_object"},
+        max_tokens=GPT_MAX_TOKENS,
     )
     try:
         obj = json.loads(resp.choices[0].message.content)
@@ -47,4 +56,3 @@ def decide_with_gpt(context: Dict) -> Decision:
         return dec
     except Exception:
         return Decision.none("gpt_parse_error")
-
