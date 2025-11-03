@@ -28,3 +28,4 @@ YYYY-MM-DD JST | owner=@あなた | artifact=phaseC-smoke | summary=papertrade�
 2025-11-03 JST | owner=@あなた | artifact=phaseC-integration-gate | summary=統合スモークをbaseline+thresholdでPRゲート化 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0
 2025-11-03 JST | owner=@あなた | artifact=phaseC-autobot-improved | summary=PRゲート(決定論)のYAMLしきい値化＋GPT手動レーン整備 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0
 2025-11-03 JST | owner=@あなた | artifact=phaseC-health-gate | summary=Gate健全性の原因分類と観測性強化(decisions.jsonl/summary) | metrics=n/a
+2025-11-03 JST | owner=@あなた | artifact=phaseC-gate-verified | summary=PRゲート(autobot)のOK/FAILを実地確認、GPT手動レーンを実行 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0
