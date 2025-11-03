@@ -1,18 +1,15 @@
 pair: "USDJPY"
 lot: 0.1
 timeframes: ["M15","H1","H4"]
-
 risk:
   per_trade_risk_jpy: 1000
   daily_max_loss_jpy: 5000
   max_consecutive_losses: 5
   max_drawdown_pct: 20
-
 gpt:
   model: "gpt-4o"
   calls: ${GPT_MAX_CALLS:3}
   max_tokens: ${GPT_MAX_TOKENS:300}
-
 notify:
   discord: ${DISCORD_WEBHOOK_URL:}
   line: ${LINE_NOTIFY_TOKEN:}
