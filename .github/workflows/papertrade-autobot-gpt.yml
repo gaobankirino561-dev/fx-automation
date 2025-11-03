@@ -18,6 +18,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+      GPT_MAX_CALLS: ${{ vars.GPT_MAX_CALLS || '3' }}
+      GPT_MAX_TOKENS: ${{ vars.GPT_MAX_TOKENS || '300' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
