@@ -1,4 +1,5 @@
 name: papertrade-autobot-gpt
+# Enables manual GPT papertrade run for inspection scenarios.
 on:
   workflow_dispatch:
     inputs:
