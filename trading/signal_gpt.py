@@ -1,4 +1,5 @@
 import json, os
+from datetime import datetime, timezone
 from typing import Dict
 from trading.decision import Decision
 try:
@@ -32,12 +33,15 @@ def decide_with_gpt(context: Dict) -> Decision:
             p=os.getenv("DECISIONS_JSONL")
             if p:
                 with open(p, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({
+                    rec = {
+                        "ts_utc": datetime.now(timezone.utc).isoformat(),
                         "side": dec.side,
                         "tp_pips": dec.tp_pips,
                         "sl_pips": dec.sl_pips,
                         "reason": dec.reason,
-                    }) + "\n")
+                        "flags": {"no_api_key": (dec.reason == "no_api_key")},
+                    }
+                    f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         except Exception:
             pass
         return dec

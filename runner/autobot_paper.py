@@ -1,4 +1,4 @@
-import os, csv, argparse, yaml, sys, pathlib
+import os, csv, argparse, yaml, sys, pathlib, subprocess
 
 # add repo root to import path for sibling packages
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
@@ -35,13 +35,20 @@ def run_sim(conf_path, mode, outdir):
 
     # metrics.csv + notify summary
     m = eng.metrics()
+    metrics_path = os.path.join(outdir,"metrics.csv")
+    with open(metrics_path,"w",newline="",encoding="utf-8") as f:
+        w=csv.writer(f); w.writerow(["metric","value"]); [w.writerow([k,v]) for k,v in m.items()]
+    gate = "UNKNOWN"
     try:
-        notify("run_summary", {"pair":eng.pair,"side":"-","price":"-","pnl_jpy":m.get("net_jpy",0),
-               "reason":f"net={m.get('net_jpy',0)}, win={m.get('win_rate_pct',0)}%, dd={m.get('max_drawdown_pct',0)}%, trades={m.get('trades',0)}"})
+        r = subprocess.run([sys.executable,"scripts/assert_thresholds.py",metrics_path,"autobot_run"], capture_output=True, text=True)
+        gate = "OK" if r.returncode==0 else "FAIL"
     except Exception:
         pass
-    with open(os.path.join(outdir,"metrics.csv"),"w",newline="",encoding="utf-8") as f:
-        w=csv.writer(f); w.writerow(["metric","value"]); [w.writerow([k,v]) for k,v in m.items()]
+    try:
+        notify("run_summary", {"pair":eng.pair,"side":"-","price":"-","pnl_jpy":m.get("net_jpy",0),
+               "reason":f"gate={gate}; net={m.get('net_jpy',0)}, win={m.get('win_rate_pct',0)}%, dd={m.get('max_drawdown_pct',0)}%, trades={m.get('trades',0)}"})
+    except Exception:
+        pass
     print("DONE metrics:", m)
 
 if __name__=="__main__":
