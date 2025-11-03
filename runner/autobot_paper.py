@@ -46,3 +46,4 @@ def run_sim(conf_path, mode, outdir):
 
 if __name__=="__main__":
     ap=argparse.ArgumentParser(); ap.add_argument("--config", default="papertrade/config.yaml"); ap.add_argument("--mode", choices=["dry","gpt"], default="dry"); ap.add_argument("--outdir", default="artifacts/papertrade_run"); a=ap.parse_args(); run_sim(a.config, a.mode, a.outdir)
+

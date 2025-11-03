@@ -18,3 +18,9 @@
 - Thresholds are centralized in ci/thresholds.yaml.
 - PR gate uses deterministic --dry, baseline match + YAML thresholds.
 - Manual GPT lane: workflow_dispatch, artifacts & step summary, soft thresholds.
+## Gate Health & Observability
+- しきい値: ci/thresholds.yaml に一元化。
+- scripts/assert_thresholds.py: YAML対応＋**原因分類**（configs欠落 / 実行時例外 / Gate未達）。
+- decisions.jsonl: ts_utc/price/flags を含む構造化ログ。
+- run_summary: gate結果を含む要約をDiscord/LINEへ（Secrets無はスキップ）。
+- レガシーWF: pushトリガは if:false で抑止。

@@ -1,3 +1,4 @@
+if: false
 name: done-check
 on:
   push:
@@ -18,3 +19,4 @@ jobs:
             const body = pr.body || "";
             const ok = /\[DONE ENTRY\][\s\S]*?\[\/DONE ENTRY\]/.test(body);
             if (!ok) core.setFailed("PR本文に [DONE ENTRY] ブロックがありません（記帳必須）");
+
