@@ -1,4 +1,4 @@
-﻿import os, csv, json, math, pathlib, datetime as dt, traceback
+﻿import os, csv, json, math, pathlib, datetime as dt, traceback, re
 from typing import Any
 import yaml
 
@@ -12,6 +12,32 @@ DECISIONS = OUTDIR / "decisions.jsonl"
 def read_cfg(path="papertrade/config_live.yaml")->dict:
     with open(path,"r",encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+# --- 追加: ${VAR:default} / 数値文字列の両対応パーサ ---
+_env_pat = re.compile(r"^\$\{([A-Z0-9_]+)(?::([^}]*))?\}$")
+def as_int(val, default:int)->int:
+    if isinstance(val,int): return val
+    if isinstance(val,float): return int(val)
+    if isinstance(val,str):
+        m=_env_pat.match(val.strip())
+        if m:
+            var=m.group(1); d=m.group(2)
+            raw=os.getenv(var, d if d not in (None,"") else str(default))
+            try: return int(str(raw))
+            except: return int(default)
+        try: return int(val.strip())
+        except: return int(default)
+    return int(default)
+
+def as_str(val, default:str)->str:
+    if val is None: return default
+    if isinstance(val,str):
+        m=_env_pat.match(val.strip())
+        if m:
+            var=m.group(1); d=m.group(2)
+            return os.getenv(var, d if d is not None else default)
+        return val
+    return str(val)
 
 def read_state()->dict:
     if STATE.exists():
@@ -43,7 +69,6 @@ def write_metrics(s:dict):
             w.writerow({"metric":k,"value":str(round(v,4))})
 
 def paper_entry(side:str, price:float, cfg:dict)->dict:
-    # ATR等が無くても動くフォールバック幅（約0.2%）
     atr_p = 0.002
     tp = price*(1+atr_p) if side=="BUY" else price*(1-atr_p)
     sl = price*(1-atr_p) if side=="BUY" else price*(1+atr_p)
@@ -56,18 +81,18 @@ def kill_switch(s:dict, cfg:dict)->tuple[bool,str]:
         s["last_reset_date"] = today
         s["consec_losses"] = 0
         write_state(s)
-    if r["daily_max_loss_jpy"] and s["equity_jpy"] <= -abs(r["daily_max_loss_jpy"]):
+    if as_int(r.get("daily_max_loss_jpy",0),0) and s["equity_jpy"] <= -abs(as_int(r.get("daily_max_loss_jpy",0),0)):
         return True,"daily_max_loss"
-    if r["max_consecutive_losses"] and s["consec_losses"] >= int(r["max_consecutive_losses"]):
+    if as_int(r.get("max_consecutive_losses",0),0) and s["consec_losses"] >= as_int(r.get("max_consecutive_losses",0),0):
         return True,"max_consecutive_losses"
-    if r["max_drawdown_pct"] and s["peak_equity_jpy"]>0:
+    mxdd = as_int(r.get("max_drawdown_pct",0),0)
+    if mxdd and s["peak_equity_jpy"]>0:
         dd = 100*abs(s["max_dd_jpy"])/s["peak_equity_jpy"]
-        if dd >= float(r["max_drawdown_pct"]):
+        if dd >= float(mxdd):
             return True,"max_drawdown_pct"
     return False,""
 
 def get_last_price(pair:str)->float:
-    # 依存が無くても動くダミー価格（UTC分で微小変動）
     base=150.00
     bump=(dt.datetime.utcnow().minute % 5)*0.005
     return round(base + bump, 3)
@@ -78,17 +103,14 @@ def run_once():
     s = read_state()
     ensure_csv_headers()
 
-    # 緊急停止フラグ
-    if os.getenv("PAPERTRADE_HALT","").lower() in ("1","true","yes"):
-        write_metrics(s)
-        return "HALT"
+    if as_str(os.getenv("PAPERTRADE_HALT",""),"").lower() in ("1","true","yes"):
+        write_metrics(s); return "HALT"
 
     pair = cfg["pair"]
     price = get_last_price(pair)
-    model = cfg["gpt"]["model"]
-    max_tokens = int(str(cfg["gpt"].get("max_tokens",300)))
+    model = as_str(cfg["gpt"].get("model","gpt-4o"), "gpt-4o")
+    max_tokens = as_int(cfg["gpt"].get("max_tokens",300), 300)
 
-    # GPT判定（無ければNO_ENTRYで継続）
     try:
         sg = importlib.import_module("trading.signal_gpt")
         prompt = f"{pair} price={price}. Decide BUY/SELL/NO_ENTRY for next 5-15min with short reason. Reply JSON."
@@ -102,7 +124,6 @@ def run_once():
     if side in ("BUY","SELL"):
         fill = price
         r = paper_entry(side, fill, cfg)
-        # まずは配線確認のため同値決済（0円）
         exitp = fill
         pnl = 0.0
         with open(TRADES,"a",newline="",encoding="utf-8") as f:
@@ -125,7 +146,6 @@ if __name__ == "__main__":
         st = run_once()
         print(f"## papertrade-live (impl)\n- time: {dt.datetime.utcnow().isoformat()}Z\n- status: {st}\n- artifacts: metrics.csv / trades.csv / decisions.jsonl")
     except Exception as e:
-        # 落とさない：最低限の成果物は必ず残す
         if not OUTDIR.exists(): OUTDIR.mkdir(parents=True, exist_ok=True)
         if not TRADES.exists():
             with open(TRADES,"w",newline="",encoding="utf-8") as f:
