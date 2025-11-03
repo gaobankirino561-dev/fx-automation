@@ -1,4 +1,20 @@
-pair: USDJPY
-timeframe: M15
 seed: 1729
-initial_equity_jpy: 50000
+pair: "USDJPY"
+lot: 0.1
+timeframe: "M15"
+start_balance_jpy: 50000
+commission_jpy_per_trade: 0
+slippage_pips: 0.1
+spread_pips: 0.2
+
+risk_guard:
+  max_daily_loss_pct: 5
+  max_drawdown_pct: 20
+  max_concurrent_positions: 1
+  per_trade_risk_jpy: 1000
+  cooldown_minutes_after_close: 5
+
+notifications:
+  discord: true
+  line: true
+  report_jpy: true

@@ -1,0 +1,13 @@
+name: done-check
+on: [pull_request]
+jobs:
+  verify-done-entry:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request?.body || "";
+            const ok = /\[DONE ENTRY\][\s\S]*?\[\/DONE ENTRY\]/.test(body);
+            if (!ok) core.setFailed("PR本文に [DONE ENTRY] ブロックがありません（記帳必須）");

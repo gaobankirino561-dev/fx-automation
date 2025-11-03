@@ -1,0 +1,39 @@
+name: papertrade-smoke
+on:
+  pull_request:
+permissions: { contents: read }
+concurrency:
+  group: papertrade-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Ensure PyYAML (skip if already available, else retry)
+        shell: bash
+        run: |
+          python - <<'PY'
+import sys
+try:
+  import yaml; print("PyYAML: present"); sys.exit(0)
+except Exception:
+  sys.exit(1)
+PY
+          if [ $? -ne 0 ]; then
+            echo "PyYAML not found. Installing..."
+            (pip install -q PyYAML) || (sleep 5 && pip install -q PyYAML)
+          fi
+      - name: Run smoke
+        run: python scripts/papertrade_smoke.py
+      - name: Assert deterministic metrics
+        run: python scripts/assert_metrics.py artifacts/papertrade_smoke/metrics.csv metrics/baseline_paper_smoke.csv
+      - name: Upload smoke metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: papertrade-smoke-metrics
+          path: artifacts/papertrade_smoke/metrics.csv

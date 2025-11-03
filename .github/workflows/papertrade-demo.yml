@@ -1,0 +1,36 @@
+name: papertrade-demo
+on:
+  pull_request:
+permissions: { contents: read }
+concurrency:
+  group: papertrade-demo-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Ensure PyYAML (skip if present)
+        shell: bash
+        run: |
+          python - <<'PY'
+try:
+  import yaml; print("PyYAML: present")
+except Exception:
+  import sys, subprocess, time
+  print("PyYAML: missing -> install")
+  (subprocess.call(["pip","install","-q","PyYAML"])==0) or (time.sleep(5), subprocess.check_call(["pip","install","-q","PyYAML"]))
+PY
+      - name: Run demo
+        run: python scripts/papertrade_demo.py
+      - name: Assert demo baseline
+        run: python scripts/assert_metrics.py artifacts/papertrade_demo/metrics.csv metrics/baseline_papertrade_demo.csv
+      - name: Upload demo artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: papertrade-demo
+          path: artifacts/papertrade_demo/**

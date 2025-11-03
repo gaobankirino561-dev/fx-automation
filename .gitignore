@@ -7,6 +7,7 @@ venv/
 *.csv
 !papertrade/logs/*.csv
 !gates/data/*.csv
+!metrics/baseline_papertrade_run.csv
 .cache/
 gpt_cache.json
 .vscode/
