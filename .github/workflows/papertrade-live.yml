@@ -1,19 +1,11 @@
 name: papertrade-live
-
 on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
-      dry:
-        description: "dry-run (true/false)"
-        default: "true"
-        required: true
-
-concurrency:
-  group: papertrade-live
-  cancel-in-progress: true
-
+      dry: { description: "dry-run (true/false)", default: "true", required: true }
+concurrency: { group: papertrade-live, cancel-in-progress: true }
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -25,45 +17,25 @@ jobs:
       LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
       PAPERTRADE_HALT: ${{ vars.PAPERTRADE_HALT || 'false' }}
       DRY: ${{ github.event.inputs.dry || 'true' }}
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
+        with: { python-version: "3.11" }
       - name: Install deps (best-effort)
         run: |
-          if [ -f requirements/papertrade.txt ]; then
-            pip install -r requirements/papertrade.txt
-          else
-            echo "no requirements/papertrade.txt (ok in boot)"
-          fi
-
+          if [ -f requirements/papertrade.txt ]; then pip install -r requirements/papertrade.txt; else echo "no requirements (ok)"; fi
       - name: Run live (boot)
         run: python runner/autobot_paper_live.py
-
       - name: Ensure artifacts exist
         run: |
           set -eux
           mkdir -p artifacts/papertrade_live
-          [ -s artifacts/papertrade_live/metrics.csv ] || \
-            printf "metric,value\nnet_jpy,0\nwin_rate_pct,0\nmax_drawdown_pct,0\ntrades,0\n" > artifacts/papertrade_live/metrics.csv
-          [ -s artifacts/papertrade_live/trades.csv ] || \
-            printf "time,side,entry,exit,pnl_jpy,reason\n" > artifacts/papertrade_live/trades.csv
-          [ -s artifacts/papertrade_live/decisions.jsonl ] || \
-            : > artifacts/papertrade_live/decisions.jsonl
-
+          [ -s artifacts/papertrade_live/metrics.csv ]   || printf "metric,value\nnet_jpy,0\nwin_rate_pct,0\nmax_drawdown_pct,0\ntrades,0\n" > artifacts/papertrade_live/metrics.csv
+          [ -s artifacts/papertrade_live/trades.csv ]    || printf "time,side,entry,exit,pnl_jpy,reason\n" > artifacts/papertrade_live/trades.csv
+          [ -s artifacts/papertrade_live/decisions.jsonl ] || : > artifacts/papertrade_live/decisions.jsonl
       - name: Show artifact tree
-        run: |
-          echo "::group::artifact tree"
-          ls -laR artifacts || true
-          echo "::endgroup::"
-
+        run: | 
+          echo "::group::artifact tree"; ls -laR artifacts || true; echo "::endgroup::"
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
-        with:
-          name: papertrade-live
-          path: artifacts/papertrade_live/**
-          if-no-files-found: warn
+        with: { name: papertrade-live, path: artifacts/papertrade_live/**, if-no-files-found: warn }
