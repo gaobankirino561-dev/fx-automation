@@ -31,3 +31,4 @@ YYYY-MM-DD JST | owner=@あなた | artifact=phaseC-smoke | summary=papertrade�
 2025-11-03 JST | owner=@あなた | artifact=phaseC-gate-verified | summary=PRゲート(autobot)のOK/FAILを実地確認、GPT手動レーンを実行 | metrics=net=3500.0, win=75.0, dd=0.0, trades=4.0
 2025-11-03 JST | owner=@あなた | artifact=phaseC-gpt-lane | summary=papertrade-autobot-gpt を feat/phaseC-papertrade でdispatch成功（404恒久解消） | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
 2025-11-03 JST | owner=@あなた | artifact=phaseC-gpt-run | summary=Secrets投入＋予算ガードでGPT手動レーン実行 | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
+2025-11-03 JST | owner=@あなた | artifact=phaseC-gpt-verify | summary=Secrets投入→artifact取得→Gate確認 | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0

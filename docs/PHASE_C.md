@@ -24,3 +24,5 @@
 - decisions.jsonl: ts_utc/price/flags を含む構造化ログ。
 - run_summary: gate結果を含む要約をDiscord/LINEへ（Secrets無はスキップ）。
 - レガシーWF: pushトリガは if:false で抑止。
+
+- 2025-11-03 Phase C completed: deterministic PR gate, GPT manual lane (404 fixed), secrets+budget run verified.
