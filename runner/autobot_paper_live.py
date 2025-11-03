@@ -125,7 +125,7 @@ def run_once():
         fill = price
         r = paper_entry(side, fill, cfg)
         exitp = fill
-        pnl = 0.0
+        pnl = -abs(float(os.getenv("TEST_LOSS_JPY","0") or 0))
         with open(TRADES,"a",newline="",encoding="utf-8") as f:
             w=csv.DictWriter(f,fieldnames=["time","side","entry","exit","pnl_jpy","reason"])
             w.writerow({"time":dt.datetime.utcnow().isoformat()+"Z","side":side,"entry":fill,"exit":exitp,"pnl_jpy":pnl,"reason":dec.get("reason","")})
@@ -157,3 +157,4 @@ if __name__ == "__main__":
         with open(DECISIONS,"a",encoding="utf-8") as f:
             f.write(json.dumps({"ts":dt.datetime.utcnow().isoformat()+"Z","error":type(e).__name__,"msg":str(e)[:200]})+"\n")
         raise
+
