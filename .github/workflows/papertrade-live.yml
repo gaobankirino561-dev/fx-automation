@@ -25,6 +25,7 @@ jobs:
         run: |
           if [ -f requirements/papertrade.txt ]; then pip install -r requirements/papertrade.txt; else echo "no requirements (ok)"; fi
       - name: Run live (boot)
+        continue-on-error: true
         run: python runner/autobot_paper_live.py
       - name: Ensure artifacts exist
         run: |
