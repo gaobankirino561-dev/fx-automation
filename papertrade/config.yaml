@@ -1,3 +1,4 @@
+strategy_id: usdjpy_m15_v1
 seed: 1729
 pair: "USDJPY"
 lot: 0.1

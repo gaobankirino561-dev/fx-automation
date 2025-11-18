@@ -1,0 +1,3 @@
+pair: "USDJPY"
+period: "PhaseF-baseline"
+notes: "Placeholder config for deterministic CI backtest."

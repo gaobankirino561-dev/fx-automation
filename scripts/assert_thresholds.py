@@ -3,10 +3,30 @@ import csv, sys, operator as op, yaml, os, traceback
 def read_metrics(path):
     d={}
     with open(path,encoding="utf-8") as f:
-        for k,v in csv.reader(f):
-            if k=="metric": continue
-            try:d[k]=float(v)
-            except: pass
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames or []
+        if "metric" in fieldnames and "value" in fieldnames:
+            for row in reader:
+                key = row.get("metric")
+                if not key or key == "metric":
+                    continue
+                try:
+                    d[key] = float(row.get("value","0"))
+                except Exception:
+                    pass
+        else:
+            f.seek(0)
+            for row in csv.reader(f):
+                if not row:
+                    continue
+                key = row[0]
+                if key == "metric":
+                    continue
+                val = row[1] if len(row) > 1 else "0"
+                try:
+                    d[key] = float(val)
+                except Exception:
+                    pass
     return d
 
 OPS={">":op.gt, ">=":op.ge, "<":op.lt, "<=":op.le, "==":op.eq}

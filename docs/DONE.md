@@ -33,3 +33,4 @@ YYYY-MM-DD JST | owner=@ã‚ãªãŸ | artifact=phaseC-smoke | summary=papertradeçµ
 2025-11-03 JST | owner=@ã‚ãªãŸ | artifact=phaseC-gpt-run | summary=SecretsæŠ•å…¥ï¼‹äºˆç®—ã‚¬ãƒ¼ãƒ‰ã§GPTæ‰‹å‹•ãƒ¬ãƒ¼ãƒ³å®Ÿè¡Œ | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
 2025-11-03 JST | owner=@ã‚ãªãŸ | artifact=phaseC-gpt-verify | summary=SecretsæŠ•å…¥â†’artifactå–å¾—â†’Gateç¢ºèª | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
 2025-11-03 JST | owner=@‚ ‚È‚½ | artifact=phaseD-live | summary=papertrade-live KILLƒeƒXƒgi‹­§•‰‚¯1ŒEenv”züŠm”FjŠ®—¹ | metrics=net=-2.0, win=0.0%, trades=1, dd=0%
+2025-11-18 JST | owner=@YOUR_GITHUB_ID | artifact=PhaseE-live-health-guard | summary=Phase E Š®—¹Flive-healthŠÏ‘ªƒŒƒCƒ„{HEALTH/ROLLING”»’è{GitHub IssueƒGƒXƒJƒŒ[ƒVƒ‡ƒ“{papertrade-live©“®ƒuƒƒbƒN{Runbook/doc®”õ‚Ü‚ÅÀ‘• | metrics=[live-health ALERT‚Épapertrade-live©“®’â~E‰^—pè‡ƒhƒLƒ…ƒƒ“ƒg‰»]

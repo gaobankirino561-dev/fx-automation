@@ -3,10 +3,25 @@ import csv, sys
 def load(path):
     d={}
     with open(path,encoding="utf-8") as f:
-        for k,v in csv.reader(f):
-            if k=="metric": continue
-            try: d[k]=float(v)
-            except: d[k]=v
+        reader = csv.DictReader(f)
+        if reader.fieldnames and "metric" in reader.fieldnames and "value" in reader.fieldnames:
+            for row in reader:
+                key = row.get("metric")
+                if not key or key == "metric":
+                    continue
+                val = row.get("value","0")
+                try: d[key]=float(val)
+                except: d[key]=val
+        else:
+            f.seek(0)
+            for row in csv.reader(f):
+                if not row:
+                    continue
+                key=row[0]
+                if key=="metric": continue
+                val=row[1] if len(row)>1 else "0"
+                try: d[key]=float(val)
+                except: d[key]=val
     return d
 
 if __name__=="__main__":

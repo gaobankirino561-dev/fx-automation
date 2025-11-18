@@ -1,0 +1,7 @@
+# Live portfolio configuration.
+# - Update this file after reviewing CI output (artifacts/backtest_matrix/portfolio_suggestion.yaml).
+# - When empty or missing, papertrade-live falls back to single-strategy config_live.yaml.
+portfolio:
+  strategies:
+    - id: usdjpy_m15_v1
+      weight: 1.0

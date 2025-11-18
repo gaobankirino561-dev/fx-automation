@@ -11,6 +11,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Smoke
-        run: echo "ci-backtest smoke ok"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run strategy backtest matrix
+        run: |
+          python scripts/backtest_matrix.py \
+            --strategies configs/strategies.yaml \
+            --out-dir artifacts/backtest_matrix
+      - name: Compute strategy leaderboard
+        run: |
+          python scripts/strategy_leaderboard.py \
+            --metrics artifacts/backtest_matrix/metrics_multi.csv \
+            --strategies configs/strategies.yaml \
+            --out-dir artifacts/backtest_matrix
+      - name: Run multi-strategy stability gate
+        run: |
+          python scripts/strategy_gate.py \
+            --stats artifacts/backtest_matrix/strategy_stats.csv \
+            --strategies configs/strategies.yaml \
+            --net-min 0 \
+            --win-min 45 \
+            --dd-max 20 \
+            --trades-min 30 \
+            --total-net-min 0
+      - name: Show summary
+        run: |
+          python scripts/mk_summary.py artifacts/backtest_matrix/metrics_multi.csv "Backtest Matrix Summary" >> "$GITHUB_STEP_SUMMARY"
+      - name: Simple gate
+        run: |
+          python scripts/assert_thresholds.py artifacts/backtest_matrix/metrics_multi.csv "total.net_jpy>=0"
+      - name: Upload matrix artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-matrix
+          path: artifacts/backtest_matrix
 

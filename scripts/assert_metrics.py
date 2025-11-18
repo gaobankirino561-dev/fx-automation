@@ -2,9 +2,28 @@ import csv, sys
 def load(path):
     d={}
     with open(path, encoding="utf-8") as f:
-        for k,v in csv.reader(f):
-            if k=="metric": continue
-            d[k]=float(v)
+        reader = csv.DictReader(f)
+        if reader.fieldnames and "metric" in reader.fieldnames and "value" in reader.fieldnames:
+            for row in reader:
+                key = row.get("metric")
+                if not key or key == "metric":
+                    continue
+                try:
+                    d[key] = float(row.get("value","0"))
+                except Exception:
+                    pass
+        else:
+            f.seek(0)
+            for row in csv.reader(f):
+                if not row:
+                    continue
+                key = row[0]
+                if key == "metric":
+                    continue
+                try:
+                    d[key] = float(row[1])
+                except Exception:
+                    pass
     return d
 
 cur = load(sys.argv[1])

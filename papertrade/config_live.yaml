@@ -1,3 +1,4 @@
+strategy_id: usdjpy_m15_v1
 pair: "USDJPY"
 lot: 0.1
 timeframes: ["M15","H1","H4"]

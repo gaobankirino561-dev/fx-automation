@@ -1,0 +1,13 @@
+strategies:
+  - id: usdjpy_m15_v1
+    name: "USDJPY M15 Daytrade v1"
+    symbol: "USDJPY"
+    timeframes:
+      fast: "M15"
+      mid: "H1"
+      slow: "H4"
+    backtest_config: configs/backtest_usdjpy_m15_v1.yaml
+    enabled_backtest: true
+    description: >
+      Baseline GPT-assisted USDJPY intraday strategy. Phase F-01 registers
+      this single strategy; more entries can be added in future phases.
