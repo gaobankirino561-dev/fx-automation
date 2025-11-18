@@ -32,3 +32,4 @@ YYYY-MM-DD JST | owner=@ã‚ãªãŸ | artifact=phaseC-smoke | summary=papertradeçµ
 2025-11-03 JST | owner=@ã‚ãªãŸ | artifact=phaseC-gpt-lane | summary=papertrade-autobot-gpt ã‚’ feat/phaseC-papertrade ã§dispatchæˆåŠŸï¼ˆ404æ’ä¹…è§£æ¶ˆï¼‰ | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
 2025-11-03 JST | owner=@ã‚ãªãŸ | artifact=phaseC-gpt-run | summary=SecretsæŠ•å…¥ï¼‹äºˆç®—ã‚¬ãƒ¼ãƒ‰ã§GPTæ‰‹å‹•ãƒ¬ãƒ¼ãƒ³å®Ÿè¡Œ | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
 2025-11-03 JST | owner=@ã‚ãªãŸ | artifact=phaseC-gpt-verify | summary=SecretsæŠ•å…¥â†’artifactå–å¾—â†’Gateç¢ºèª | metrics=net=0.0, win=0.0, dd=0.0, trades=0.0
+2025-11-03 JST | owner=@‚ ‚È‚½ | artifact=phaseD-live | summary=papertrade-live KILLƒeƒXƒgi‹­§•‰‚¯1ŒEenv”züŠm”FjŠ®—¹ | metrics=net=-2.0, win=0.0%, trades=1, dd=0%
